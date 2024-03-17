@@ -7,13 +7,10 @@ import gln.glViewport
 import imgui.ConfigFlag
 import imgui.DEBUG
 import imgui.ImGui
-import imgui.api.slider
 import imgui.classes.Context
 import imgui.div
-import imgui.dsl.button
 import imgui.impl.gl.ImplGL3
 import imgui.impl.glfw.ImplGlfw
-import org.lwjgl.glfw.GLFW.glfwSwapBuffers
 import org.lwjgl.opengl.GL
 import org.lwjgl.opengl.GL11.*
 import org.lwjgl.system.Platform
@@ -133,8 +130,7 @@ fun main() {
         )
         glClear(GL_COLOR_BUFFER_BIT)
 
-        glColor3f(0f, 0f, 0f)
-        glRecti(200, 200, 300, 400)
+        Scene.draw()
 
         implGl3.renderDrawData(ImGui.drawData!!)
 
@@ -150,3 +146,4 @@ fun main() {
     gAppWindow.destroy()
     glfw.terminate()
 }
+
