@@ -34,6 +34,9 @@ object UI {
             }
 
             dsl.window("Diagnostics") {
+                //dsl.button("Save UI") {}
+                ImGui.text("Settings filename: ${ImGui.io.iniFilename}")
+                
                 if (showMouseWindow) {
                     ImGui.text("Showing mouse...")
                 }

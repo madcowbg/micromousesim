@@ -19,6 +19,7 @@ import uno.glfw.GlfwWindow
 import uno.glfw.Hints
 import uno.glfw.VSync
 import uno.glfw.glfw
+import java.io.File
 
 // Data
 lateinit var gAppWindow: GlWindow
@@ -30,6 +31,8 @@ lateinit var implGl3: ImplGL3
 
 var clearColor = Vec4(0.45f, 0.55f, 0.6f, 1f)
 
+
+const val IMGUI_INI = "ui.imgui.ini"
 
 // Main code
 fun main() {
@@ -70,6 +73,16 @@ fun main() {
     val io = ctx.io
     io.configFlags /= ConfigFlag.NavEnableKeyboard  // Enable Keyboard Controls
     io.configFlags /= ConfigFlag.NavEnableGamepad   // Enable Gamepad Controls
+    io.iniFilename = IMGUI_INI
+
+    File(IMGUI_INI).run {
+        if (!exists()) {
+            // touch file if it doesn't exist to make sure ImGui reads and writes to it
+            val writer = writer()
+            writer.flush()
+            writer.close()
+        }
+    }
 
     // Setup Dear ImGui style
     ImGui.styleColorsDark()
@@ -79,7 +92,8 @@ fun main() {
     implGlfw = ImplGlfw(gAppWindow, true)
     implGl3 = ImplGL3()
 
-    GL.createCapabilities()
+    GL.createCapabilities() // needed for GL scene rendering
+
     // Load Fonts
     // - If no fonts are loaded, dear imgui will use the default font. You can also load multiple fonts and use ImGui::PushFont()/PopFont() to select them.
     // - AddFontFromFileTTF() will return the ImFont* so you can store it if you need to select the font among multiple.
