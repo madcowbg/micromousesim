@@ -19,12 +19,12 @@ object MouseSettings : PersistedSettings {
 }
 
 object UI {
-    var showMouseWindow: Boolean = true
+    var showMouse: Boolean = true
     fun loop() {
         run {
             dsl.window("Settings") {
-                dsl.checkbox("Show Mouse", ::showMouseWindow) {}
-                if (showMouseWindow) {
+                dsl.checkbox("Show Mouse", ::showMouse) {}
+                if (showMouse) {
                     ImGui.text("Coordinates:")
                     slider("X", MouseSettings::topLeftX, 0, ImGui.io.displaySize.x)
                     slider("Y", MouseSettings::topLeftY, 0, ImGui.io.displaySize.y)
@@ -36,8 +36,8 @@ object UI {
             dsl.window("Diagnostics") {
                 //dsl.button("Save UI") {}
                 ImGui.text("Settings filename: ${ImGui.io.iniFilename}")
-                
-                if (showMouseWindow) {
+
+                if (showMouse) {
                     ImGui.text("Showing mouse...")
                 }
 

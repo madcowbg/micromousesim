@@ -1,6 +1,7 @@
 package examples
 
 
+import glm_.vec2.Vec2
 import glm_.vec4.Vec4
 import gln.checkError
 import gln.glViewport
@@ -120,9 +121,19 @@ fun main() {
     // - When io.WantCaptureKeyboard is true, do not dispatch keyboard input data to your main application, or clear/overwrite your copy of the keyboard data.
     // Generally you may always pass all inputs to dear imgui, and hide them from your application based on those two flags.
 
+    glViewport(gAppWindow.framebufferSize)
+    glClearColor(
+        clearColor.x * clearColor.w,
+        clearColor.y * clearColor.w,
+        clearColor.z * clearColor.w,
+        clearColor.w
+    )
+
     // Main loop
     // [JVM] This automatically also polls events, swaps buffers and gives a MemoryStack instance for the i-th frame
     gAppWindow.loop {
+
+        glClear(GL_COLOR_BUFFER_BIT)
 
         // Start the Dear ImGui frame
         implGl3.newFrame()
@@ -130,21 +141,12 @@ fun main() {
 
         ImGui.newFrame()
 
-        UI.loop()
+        UI.loop() // UI code
+
+        Scene.draw() // custom code
 
         // Rendering
         ImGui.render()
-
-        glViewport(gAppWindow.framebufferSize)
-        glClearColor(
-            clearColor.x * clearColor.w,
-            clearColor.y * clearColor.w,
-            clearColor.z * clearColor.w,
-            clearColor.w
-        )
-        glClear(GL_COLOR_BUFFER_BIT)
-
-        Scene.draw()
 
         implGl3.renderDrawData(ImGui.drawData!!)
 

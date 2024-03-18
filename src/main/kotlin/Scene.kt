@@ -1,18 +1,24 @@
 package examples
 
-import org.lwjgl.opengl.GL11
+import glm_.vec2.Vec2
+import imgui.ImGui
 
 object Scene {
     fun draw() {
 
 
-        GL11.glColor3f(0f, 0f, 0f)
-        GL11.glRecti(
-            MouseSettings.topLeftX,
-            MouseSettings.topLeftY,
-            MouseSettings.topLeftX + MouseSettings.width,
-            MouseSettings.topLeftY + MouseSettings.height
-        )
+        ImGui.backgroundDrawList.addRectFilled(Vec2(20, 30), Vec2(100, 200), ImGui.getColorU32(40, 150, 70, 255))
+
+        if (UI.showMouse)
+            ImGui.backgroundDrawList.addRectFilled(
+                Vec2(
+                    MouseSettings.topLeftX,
+                    MouseSettings.topLeftY,
+                ), Vec2(
+                    MouseSettings.topLeftX + MouseSettings.width,
+                    MouseSettings.topLeftY + MouseSettings.height
+                ), ImGui.getColorU32(50, 100, 90, 255)
+            )
 
     }
 }
