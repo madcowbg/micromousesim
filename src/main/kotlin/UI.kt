@@ -20,8 +20,13 @@ object MouseSettings : PersistedSettings {
 
 object UI {
     var showMouse: Boolean = true
+    var showDemoWindow: Boolean = false
+
     fun loop() {
         run {
+            if (showDemoWindow)
+                ImGui.showDemoWindow(::showDemoWindow)
+
             dsl.window("Settings") {
                 dsl.checkbox("Show Mouse", ::showMouse) {}
                 if (showMouse) {
@@ -31,6 +36,8 @@ object UI {
                     slider("width", MouseSettings::width, 0, ImGui.io.displaySize.x)
                     slider("height", MouseSettings::height, 0, ImGui.io.displaySize.y)
                 }
+                
+                dsl.checkbox("Show Demo Window", ::showDemoWindow) {}
             }
 
             dsl.window("Diagnostics") {

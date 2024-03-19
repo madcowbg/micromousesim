@@ -74,8 +74,9 @@ object Scene {
 
         //ImGui.backgroundDrawList.addRectFilled(Vec2(20, 30), Vec2(100, 200), ImGui.getColorU32(40, 150, 70, 255))
 
+        val drawList = ImGui.backgroundDrawList
         if (UI.showMouse) {
-            ImGui.backgroundDrawList.addRectFilled(
+            drawList.addRectFilled(
                 Vec2(
                     MouseSettings.topLeftX,
                     MouseSettings.topLeftY,
@@ -87,14 +88,14 @@ object Scene {
         }
 
         // maze background
-        ImGui.backgroundDrawList.addRectFilled(
+        drawList.addRectFilled(
             MazeSettings.toMazeCoords(0, 0),
             MazeSettings.toMazeCoords(labyrinth.size, labyrinth.size),
             MAZE_BACKGROUND_COLOR
         )
 
         labyrinth.walls.forEach { wall ->
-            ImGui.backgroundDrawList.addLine(
+            drawList.addLine(
                 MazeSettings.toMazeCoords(wall.a.x, wall.a.y),
                 MazeSettings.toMazeCoords(wall.b.x, wall.b.y),
                 MAZE_WALL_COLOR,
@@ -104,7 +105,7 @@ object Scene {
 
         for (x in 0 until labyrinth.size) {
             for (y in 0 until labyrinth.size) {
-                ImGui.backgroundDrawList.addText(
+                drawList.addText(
                     MazeSettings.toMazeCoords(x + 0.4, y + 0.5),
                     MAZE_TEXT_COLOR,
                     "cell $x,$y"
@@ -114,7 +115,7 @@ object Scene {
 
         for (x in 0..labyrinth.size) {
             for (y in 0..labyrinth.size) {
-                ImGui.backgroundDrawList.addText(
+                drawList.addText(
                     MazeSettings.toMazeCoords(x - 0.1, y - 0.1),
                     MAZE_TEXT_COLOR,
                     "($x,$y)"
