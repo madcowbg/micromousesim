@@ -36,7 +36,7 @@ object UI {
                     slider("width", MouseSettings::width, 0, ImGui.io.displaySize.x)
                     slider("height", MouseSettings::height, 0, ImGui.io.displaySize.y)
                 }
-                
+
                 dsl.checkbox("Show Demo Window", ::showDemoWindow) {}
             }
 

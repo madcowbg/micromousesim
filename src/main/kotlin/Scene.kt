@@ -4,8 +4,10 @@ import examples.utils.settings.PersistedSettings
 import glm_.vec2.Vec2
 import glm_.vec4.Vec4
 import imgui.ImGui
+import imgui.dsl
 import org.lwjgl.opengl.GL11
 import kotlin.math.abs
+import kotlin.math.min
 
 class Pt(val x: Int, val y: Int)
 class Wall(val a: Pt, val b: Pt) {
@@ -23,8 +25,8 @@ class Labyrinth(val size: Int, val walls: List<Wall>) {
 
 }
 
-fun path(vararg pts: Pt): List<Wall> {
-    if (pts.size <= 1) return emptyList()
+fun path(vararg pts: Pt): Array<Wall> {
+    if (pts.size <= 1) return emptyArray()
 
     val res = mutableListOf<Wall>()
     var current = pts[0]
@@ -35,10 +37,10 @@ fun path(vararg pts: Pt): List<Wall> {
         current = pts[i]
         res += wall
     }
-    return res
+    return res.toTypedArray()
 }
 
-fun hvline(start: Pt, end: Pt): List<Wall> {
+fun hvline(start: Pt, end: Pt): Array<Wall> {
     check(start.x == end.x || start.y == end.y)
 
     val length = abs(start.x - end.x) + abs(start.y - end.y)
@@ -59,7 +61,8 @@ val labyrinth: Labyrinth = Labyrinth(
             + hvline(Pt(4, 4), Pt(4, 0)) // right border
             + hvline(Pt(4, 0), Pt(0, 0)) // bottom border
             + listOf(
-        Wall(Pt(1, 1), Pt(2, 1))
+        *hvline(Pt(0, 1), Pt(2, 1)),
+        Wall(Pt(3, 0), Pt(3, 1))
     )
 )
 
@@ -87,56 +90,67 @@ object Scene {
             )
         }
 
-        // maze background
-        drawList.addRectFilled(
-            MazeSettings.toMazeCoords(0, 0),
-            MazeSettings.toMazeCoords(labyrinth.size, labyrinth.size),
-            MAZE_BACKGROUND_COLOR
-        )
-
-        labyrinth.walls.forEach { wall ->
-            drawList.addLine(
-                MazeSettings.toMazeCoords(wall.a.x, wall.a.y),
-                MazeSettings.toMazeCoords(wall.b.x, wall.b.y),
-                MAZE_WALL_COLOR,
-                2.0f
-            )
-        }
-
-        for (x in 0 until labyrinth.size) {
-            for (y in 0 until labyrinth.size) {
-                drawList.addText(
-                    MazeSettings.toMazeCoords(x + 0.4, y + 0.5),
-                    MAZE_TEXT_COLOR,
-                    "cell $x,$y"
-                )
-            }
-        }
-
-        for (x in 0..labyrinth.size) {
-            for (y in 0..labyrinth.size) {
-                drawList.addText(
-                    MazeSettings.toMazeCoords(x - 0.1, y - 0.1),
-                    MAZE_TEXT_COLOR,
-                    "($x,$y)"
-                )
-            }
-        }
-
-
+        drawLabyrinth()
     }
+
+    private fun drawLabyrinth() {
+        dsl.window("Labyrinth") {
+
+            val OFFSET = 30
+            var topLeftX: Float = ImGui.windowPos.x + OFFSET
+            var topLeftY: Float = ImGui.windowPos.y + OFFSET
+
+            var sizePerCell: Float =
+                min(ImGui.windowWidth - 2 * OFFSET, ImGui.windowHeight - 2 * OFFSET) / labyrinth.size
+
+            fun toMazeCoords(x: Number, y: Number) = Vec2(
+                topLeftX + x.toFloat() * sizePerCell,
+                topLeftY + y.toFloat() * sizePerCell
+            )
+
+            val drawList = ImGui.windowDrawList
+
+            // maze background
+            drawList.addRectFilled(
+                toMazeCoords(0, 0),
+                toMazeCoords(labyrinth.size, labyrinth.size),
+                MAZE_BACKGROUND_COLOR
+            )
+
+            labyrinth.walls.forEach { wall ->
+                drawList.addLine(
+                    toMazeCoords(wall.a.x, wall.a.y),
+                    toMazeCoords(wall.b.x, wall.b.y),
+                    MAZE_WALL_COLOR,
+                    2.0f
+                )
+            }
+
+            for (x in 0 until labyrinth.size) {
+                for (y in 0 until labyrinth.size) {
+                    drawList.addText(
+                        toMazeCoords(x + 0.4, y + 0.5),
+                        MAZE_TEXT_COLOR,
+                        "cell $x,$y"
+                    )
+                }
+            }
+
+            for (x in 0..labyrinth.size) {
+                for (y in 0..labyrinth.size) {
+                    drawList.addText(
+                        toMazeCoords(x - 0.1, y - 0.1),
+                        MAZE_TEXT_COLOR,
+                        "($x,$y)"
+                    )
+                }
+            }
+        }
+    }
+
 }
 
-object MazeSettings : PersistedSettings {
+class MazeSettings : PersistedSettings {
     override val settingsGroup: String = "ui.maze"
 
-    var topLeftX: Int by simpleProps.bind({ it.toInt() }, 200)
-    var topLeftY: Int by simpleProps.bind({ it.toInt() }, 200)
-
-    var sizePerCell: Int by simpleProps.bind({ it.toInt() }, 100)
-
-    fun toMazeCoords(x: Number, y: Number) = Vec2(
-        topLeftX + x.toFloat() * sizePerCell,
-        topLeftY + y.toFloat() * sizePerCell
-    )
 }

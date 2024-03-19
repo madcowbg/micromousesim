@@ -64,7 +64,7 @@ fun main() {
     }
 
     // Create window with graphics context
-    val glfwWindow = GlfwWindow(1280, 720, "Dear ImGui GLFW+OpenGL3 OpenGL example")
+    val glfwWindow = GlfwWindow(1280, 1000, "Dear ImGui GLFW+OpenGL3 OpenGL example")
     gAppWindow = GlWindow(glfwWindow)
     gAppWindow.makeCurrent()
     glfw.swapInterval = VSync.ON   // Enable vsync
