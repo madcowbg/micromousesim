@@ -71,6 +71,8 @@ private val MAZE_BACKGROUND_COLOR = ImGui.getColorU32(Vec4(arrayOf(0.2f, 0.5f, 0
 private val MAZE_WALL_COLOR = ImGui.getColorU32(Vec4(arrayOf(1f, 1f, 1f, 1f)))
 private val MAZE_TEXT_COLOR = ImGui.getColorU32(Vec4(arrayOf(1f, 1f, 1f, 0.5f)))
 
+private val MOUSE_BODY_COLOR = ImGui.getColorU32(Vec4(arrayOf(0.1f, .2f, .8f, .9f)))
+private val MOUSE_HEAD_COLOR = ImGui.getColorU32(Vec4(arrayOf(0.4f, .2f, .2f, .9f)))
 
 object Scene {
     fun draw() {
@@ -107,6 +109,8 @@ object Scene {
                 topLeftX + x.toFloat() * sizePerCell,
                 topLeftY + y.toFloat() * sizePerCell
             )
+
+            fun toMazeCoords(p: Vec2) = toMazeCoords(p.x, p.y)
 
             val drawList = ImGui.windowDrawList
 
@@ -145,6 +149,24 @@ object Scene {
                     )
                 }
             }
+
+// drawing mouse
+            val mouseCenter = Vec2(0.5, 0.5)
+            val mouseSize = 0.25
+
+            drawList.addRectFilled(
+                toMazeCoords(mouseCenter - mouseSize / 2),
+                toMazeCoords(mouseCenter + mouseSize / 2),
+                MOUSE_BODY_COLOR,
+                rounding = 5f
+            )
+
+            drawList.addLine(
+                toMazeCoords(mouseCenter),
+                toMazeCoords(mouseCenter + Vec2(0.12, 0)),
+                MOUSE_HEAD_COLOR,
+                thickness = 3f
+            )
         }
     }
 
