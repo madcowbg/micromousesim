@@ -125,7 +125,7 @@ object Scene {
 
 
 fun mapRot(from: Vec2, to: Vec2): (Vec2) -> Vec2 {
-    val transf = rot(to, from)
+    val transf = rot(from, to)
     return { original -> transf.times(original) }
 }
 
