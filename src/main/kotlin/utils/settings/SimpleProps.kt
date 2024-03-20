@@ -1,4 +1,4 @@
-package examples.utils.settings
+package utils.settings
 
 import java.io.File
 import java.io.IOException

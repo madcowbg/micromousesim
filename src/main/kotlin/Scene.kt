@@ -1,29 +1,24 @@
-package examples
-
-import examples.utils.settings.PersistedSettings
+import utils.settings.PersistedSettings
 import glm_.vec2.Vec2
 import glm_.vec4.Vec4
 import imgui.ImGui
+import imgui.classes.DrawList
 import imgui.dsl
-import org.lwjgl.opengl.GL11
+import utils.geom.rot
 import kotlin.math.abs
+import kotlin.math.cos
 import kotlin.math.min
+import kotlin.math.sin
 
-class Pt(val x: Int, val y: Int)
+class Pt(val x: Int, val y: Int) {
+    val vec: Vec2 get() = Vec2(x, y)
+}
+
 class Wall(val a: Pt, val b: Pt) {
     val lengthSq: Int get() = (a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y)
 }
 
-class Labyrinth(val size: Int, val walls: List<Wall>) {
-//    class Builder(val size: Int) {
-//        val walls = mutableListOf<Wall>()
-//
-//        operator fun plusAssign(wall: Wall) {
-//            walls += wall
-//        }
-//    }
-
-}
+class Labyrinth(val size: Int, val walls: List<Wall>)
 
 fun path(vararg pts: Pt): Array<Wall> {
     if (pts.size <= 1) return emptyArray()
@@ -74,105 +69,143 @@ private val MAZE_TEXT_COLOR = ImGui.getColorU32(Vec4(arrayOf(1f, 1f, 1f, 0.5f)))
 private val MOUSE_BODY_COLOR = ImGui.getColorU32(Vec4(arrayOf(0.1f, .2f, .8f, .9f)))
 private val MOUSE_HEAD_COLOR = ImGui.getColorU32(Vec4(arrayOf(0.4f, .2f, .2f, .9f)))
 
+
+class Position(val pos: Vec2, val orient: Vec2)
+class Mouse(val size: Float) {
+    val front = Vec2(0, 1) // mouse face down
+}
+
+val mouse = Mouse(0.5f) // mouse looking to left
+
 object Scene {
     fun draw() {
-
-        //ImGui.backgroundDrawList.addRectFilled(Vec2(20, 30), Vec2(100, 200), ImGui.getColorU32(40, 150, 70, 255))
-
-        val drawList = ImGui.backgroundDrawList
         if (UI.showMouse) {
-            drawList.addRectFilled(
-                Vec2(
-                    MouseSettings.topLeftX,
-                    MouseSettings.topLeftY,
-                ), Vec2(
-                    MouseSettings.topLeftX + MouseSettings.width,
-                    MouseSettings.topLeftY + MouseSettings.height
-                ), ImGui.getColorU32(50, 100, 90, 255)
-            )
+            dsl.window("Mouse") {
+                val drawList = ImGui.windowDrawList
+                val drawSize = min(ImGui.windowWidth, ImGui.windowHeight)
+
+                val mousePos = Position(Vec2(0.5, 0.5), Vec2(0, 1))
+
+                val fitMouseToWindow =
+                    mapFitRectToRect(
+                        mousePos.pos + Vec2(-0.5, .5),
+                        mousePos.pos + Vec2(.5, -0.5),
+                        ImGui.windowPos,
+                        ImGui.windowPos + drawSize
+                    )
+
+                drawMouse(mouse, mousePos, drawList, fitMouseToWindow)
+            }
         }
 
-        drawLabyrinth()
-    }
-
-    private fun drawLabyrinth() {
         dsl.window("Labyrinth") {
-
-            val OFFSET = 30
-            var topLeftX: Float = ImGui.windowPos.x + OFFSET
-            var topLeftY: Float = ImGui.windowPos.y + OFFSET
-
-            var sizePerCell: Float =
-                min(ImGui.windowWidth - 2 * OFFSET, ImGui.windowHeight - 2 * OFFSET) / labyrinth.size
-
-            fun toMazeCoords(x: Number, y: Number) = Vec2(
-                topLeftX + x.toFloat() * sizePerCell,
-                topLeftY + y.toFloat() * sizePerCell
-            )
-
-            fun toMazeCoords(p: Vec2) = toMazeCoords(p.x, p.y)
+            val offset = 30
+            val drawSize = min(ImGui.windowWidth, ImGui.windowHeight)
 
             val drawList = ImGui.windowDrawList
 
-            // maze background
-            drawList.addRectFilled(
-                toMazeCoords(0, 0),
-                toMazeCoords(labyrinth.size, labyrinth.size),
-                MAZE_BACKGROUND_COLOR
+            val map = mapFitRectToRect(
+                Vec2(0, labyrinth.size),
+                Vec2(labyrinth.size, 0),
+                ImGui.windowPos + offset,
+                ImGui.windowPos + Vec2(drawSize, drawSize) - offset
             )
 
-            labyrinth.walls.forEach { wall ->
-                drawList.addLine(
-                    toMazeCoords(wall.a.x, wall.a.y),
-                    toMazeCoords(wall.b.x, wall.b.y),
-                    MAZE_WALL_COLOR,
-                    2.0f
-                )
-            }
+            drawLabyrinth(labyrinth, drawList, map)
 
-            for (x in 0 until labyrinth.size) {
-                for (y in 0 until labyrinth.size) {
-                    drawList.addText(
-                        toMazeCoords(x + 0.4, y + 0.5),
-                        MAZE_TEXT_COLOR,
-                        "cell $x,$y"
-                    )
-                }
-            }
-
-            for (x in 0..labyrinth.size) {
-                for (y in 0..labyrinth.size) {
-                    drawList.addText(
-                        toMazeCoords(x - 0.1, y - 0.1),
-                        MAZE_TEXT_COLOR,
-                        "($x,$y)"
-                    )
-                }
-            }
-
-// drawing mouse
-            val mouseCenter = Vec2(0.5, 0.5)
-            val mouseSize = 0.25
-
-            drawList.addRectFilled(
-                toMazeCoords(mouseCenter - mouseSize / 2),
-                toMazeCoords(mouseCenter + mouseSize / 2),
-                MOUSE_BODY_COLOR,
-                rounding = 5f
+            val mousePos = Position(
+                Vec2(0.5, 0.5),
+                Vec2(sin(MouseSettings.orient * Math.PI / 180), cos(MouseSettings.orient * Math.PI / 180))
             )
 
-            drawList.addLine(
-                toMazeCoords(mouseCenter),
-                toMazeCoords(mouseCenter + Vec2(0.12, 0)),
-                MOUSE_HEAD_COLOR,
-                thickness = 3f
+            drawMouse(mouse, mousePos, drawList, map)
+        }
+    }
+}
+
+
+fun mapRot(from: Vec2, to: Vec2): (Vec2) -> Vec2 {
+    val transf = rot(to, from)
+    return { original -> transf.times(original) }
+}
+
+private fun drawMouse(mouse: Mouse, mousePos: Position, drawList: DrawList, map: (original: Vec2) -> Vec2) {
+
+    val mouseRotation = mapRot(mousePos.orient, mouse.front)
+    val bodyA = Vec2(1, 1) * (-mouse.size / 2)
+    val bodyB = Vec2(1, 1) * (+mouse.size / 2)
+
+    val g = { it: Vec2 -> map(mousePos.pos + mouseRotation(it)) }
+
+    drawList.addQuadFilled(
+        g(bodyA), g(Vec2(bodyA.x, bodyB.y)), g(bodyB), g(Vec2(bodyB.x, bodyA.y)),
+        MOUSE_BODY_COLOR
+    )
+
+    drawList.addLine(
+        g(Vec2(0, 0)),
+        g(mouse.front * mouse.size * 0.4),
+        MOUSE_HEAD_COLOR,
+        thickness = 3f
+    )
+    /*
+        drawList.addRectFilled(
+            map(mouse.pos - mouse.size / 2),
+            map(mouse.pos + mouse.size / 2),
+            MOUSE_BODY_COLOR,
+            rounding = 5f
+        )
+
+        drawList.addLine(
+            map(mouse.pos),
+            map(mouse.pos + mouse.front * mouse.size * 0.4),
+            MOUSE_HEAD_COLOR,
+            thickness = 3f
+        )*/
+}
+
+private fun drawLabyrinth(labyrinth: Labyrinth, drawList: DrawList, map: (original: Vec2) -> Vec2) {
+    // maze background
+    drawList.addRectFilled(
+        map(Vec2(0, 0)),
+        map(Vec2(labyrinth.size, labyrinth.size)),
+        MAZE_BACKGROUND_COLOR
+    )
+
+    labyrinth.walls.forEach { wall ->
+        drawList.addLine(
+            map(wall.a.vec),
+            map(wall.b.vec),
+            MAZE_WALL_COLOR,
+            2.0f
+        )
+    }
+
+    for (x in 0 until labyrinth.size) {
+        for (y in 0 until labyrinth.size) {
+            drawList.addText(
+                map(Vec2(x + 0.4, y + 0.5)),
+                MAZE_TEXT_COLOR,
+                "cell $x,$y"
             )
         }
     }
 
+    for (x in 0..labyrinth.size) {
+        for (y in 0..labyrinth.size) {
+            drawList.addText(
+                map(Vec2(x - 0.1, y - 0.1)),
+                MAZE_TEXT_COLOR,
+                "($x,$y)"
+            )
+        }
+    }
+}
+
+fun mapFitRectToRect(fromA: Vec2, fromB: Vec2, toA: Vec2, toB: Vec2): (original: Vec2) -> Vec2 = { original ->
+    toA + (toB - toA) * (original - fromA) / (fromB - fromA)
 }
 
 class MazeSettings : PersistedSettings {
     override val settingsGroup: String = "ui.maze"
-
 }
