@@ -4,6 +4,7 @@ import glm_.vec4.Vec4
 import imgui.ImGui
 import imgui.classes.DrawList
 import imgui.dsl
+import utils.geom.intersection
 import utils.geom.rot
 import kotlin.math.abs
 import kotlin.math.cos
@@ -55,8 +56,9 @@ val labyrinth: Labyrinth = Labyrinth(
             + hvline(Pt(0, 4), Pt(4, 4))  // top border
             + hvline(Pt(4, 4), Pt(4, 0)) // right border
             + hvline(Pt(4, 0), Pt(0, 0)) // bottom border
+
+            + hvline(Pt(0, 1), Pt(2, 1))
             + listOf(
-        *hvline(Pt(0, 1), Pt(2, 1)),
         Wall(Pt(3, 0), Pt(3, 1))
     )
 )
@@ -69,6 +71,8 @@ private val MAZE_TEXT_COLOR = ImGui.getColorU32(Vec4(arrayOf(1f, 1f, 1f, 0.5f)))
 private val MOUSE_BODY_COLOR = ImGui.getColorU32(Vec4(arrayOf(0.1f, .2f, .8f, .9f)))
 private val MOUSE_HEAD_COLOR = ImGui.getColorU32(Vec4(arrayOf(0.4f, .2f, .2f, .9f)))
 
+private val LASER_COLOR = ImGui.getColorU32(Vec4(arrayOf(0.7f, .1f, .7f, .4f)))
+
 
 class Position(val pos: Vec2, val orient: Vec2)
 class Mouse(val size: Float) {
@@ -76,6 +80,8 @@ class Mouse(val size: Float) {
 }
 
 val mouse = Mouse(0.5f) // mouse looking to left
+
+class Laser(val orig: Vec2, val direction: Vec2)
 
 object Scene {
     fun draw() {
@@ -104,21 +110,44 @@ object Scene {
 
             val drawList = ImGui.windowDrawList
 
-            val map = mapFitRectToRect(
+            val mapLabyrinth = mapFitRectToRect(
                 Vec2(0, labyrinth.size),
                 Vec2(labyrinth.size, 0),
                 ImGui.windowPos + offset,
                 ImGui.windowPos + Vec2(drawSize, drawSize) - offset
             )
 
-            drawLabyrinth(labyrinth, drawList, map)
+            drawLabyrinth(labyrinth, drawList, mapLabyrinth)
 
             val mousePos = Position(
                 Vec2(0.5, 0.5),
                 Vec2(sin(MouseSettings.orient * Math.PI / 180), cos(MouseSettings.orient * Math.PI / 180))
             )
 
-            drawMouse(mouse, mousePos, drawList, map)
+
+            val mouseRotation = mapRot(mousePos.orient, mouse.front)
+            val g = { it: Vec2 -> mapLabyrinth(mousePos.pos + mouseRotation(it)) }
+
+            drawMouse(mouse, mousePos, drawList, g)
+
+            val laser = Laser(mousePos.pos, mouseRotation(mouse.front))
+
+            drawList.addLine(
+                mapLabyrinth(laser.orig),
+                mapLabyrinth(laser.orig + laser.direction * 1000),
+                LASER_COLOR,
+                thickness = 3f
+            )
+
+            for (wall in labyrinth.walls) {
+                val intersect = intersection(laser.orig, laser.orig + laser.direction, wall.a.vec, wall.b.vec)
+                if (intersect != null) {
+                    if (intersect.t > 0 && intersect.u in 0.0..1.0) {
+                        // we got an intersection!
+                        drawList.addCircleFilled(mapLabyrinth(intersect.point), 5f, LASER_COLOR)
+                    }
+                }
+            }
         }
     }
 }
@@ -129,13 +158,10 @@ fun mapRot(from: Vec2, to: Vec2): (Vec2) -> Vec2 {
     return { original -> transf.times(original) }
 }
 
-private fun drawMouse(mouse: Mouse, mousePos: Position, drawList: DrawList, map: (original: Vec2) -> Vec2) {
-
-    val mouseRotation = mapRot(mousePos.orient, mouse.front)
+private fun drawMouse(mouse: Mouse, mousePos: Position, drawList: DrawList, g: (original: Vec2) -> Vec2) {
     val bodyA = Vec2(1, 1) * (-mouse.size / 2)
     val bodyB = Vec2(1, 1) * (+mouse.size / 2)
 
-    val g = { it: Vec2 -> map(mousePos.pos + mouseRotation(it)) }
 
     drawList.addQuadFilled(
         g(bodyA), g(Vec2(bodyA.x, bodyB.y)), g(bodyB), g(Vec2(bodyB.x, bodyA.y)),
@@ -148,20 +174,6 @@ private fun drawMouse(mouse: Mouse, mousePos: Position, drawList: DrawList, map:
         MOUSE_HEAD_COLOR,
         thickness = 3f
     )
-    /*
-        drawList.addRectFilled(
-            map(mouse.pos - mouse.size / 2),
-            map(mouse.pos + mouse.size / 2),
-            MOUSE_BODY_COLOR,
-            rounding = 5f
-        )
-
-        drawList.addLine(
-            map(mouse.pos),
-            map(mouse.pos + mouse.front * mouse.size * 0.4),
-            MOUSE_HEAD_COLOR,
-            thickness = 3f
-        )*/
 }
 
 private fun drawLabyrinth(labyrinth: Labyrinth, drawList: DrawList, map: (original: Vec2) -> Vec2) {
