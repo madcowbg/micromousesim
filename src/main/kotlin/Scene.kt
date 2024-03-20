@@ -90,17 +90,15 @@ object Scene {
                 val drawList = ImGui.windowDrawList
                 val drawSize = min(ImGui.windowWidth, ImGui.windowHeight)
 
-                val mousePos = Position(Vec2(0.5, 0.5), Vec2(0, 1))
-
                 val fitMouseToWindow =
                     mapFitRectToRect(
-                        mousePos.pos + Vec2(-0.5, .5),
-                        mousePos.pos + Vec2(.5, -0.5),
+                        Vec2(1, 1) * -0.5,
+                        Vec2(1, 1) * 0.5,
                         ImGui.windowPos,
                         ImGui.windowPos + drawSize
                     )
 
-                drawMouse(mouse, mousePos, drawList, fitMouseToWindow)
+                drawMouse(mouse, drawList, fitMouseToWindow)
             }
         }
 
@@ -124,11 +122,10 @@ object Scene {
                 Vec2(sin(MouseSettings.orient * Math.PI / 180), cos(MouseSettings.orient * Math.PI / 180))
             )
 
-
             val mouseRotation = mapRot(mousePos.orient, mouse.front)
             val g = { it: Vec2 -> mapLabyrinth(mousePos.pos + mouseRotation(it)) }
 
-            drawMouse(mouse, mousePos, drawList, g)
+            drawMouse(mouse, drawList, g)
 
             val laser = Laser(mousePos.pos, mouseRotation(mouse.front))
 
@@ -158,10 +155,9 @@ fun mapRot(from: Vec2, to: Vec2): (Vec2) -> Vec2 {
     return { original -> transf.times(original) }
 }
 
-private fun drawMouse(mouse: Mouse, mousePos: Position, drawList: DrawList, g: (original: Vec2) -> Vec2) {
+private fun drawMouse(mouse: Mouse, drawList: DrawList, g: (original: Vec2) -> Vec2) {
     val bodyA = Vec2(1, 1) * (-mouse.size / 2)
     val bodyB = Vec2(1, 1) * (+mouse.size / 2)
-
 
     drawList.addQuadFilled(
         g(bodyA), g(Vec2(bodyA.x, bodyB.y)), g(bodyB), g(Vec2(bodyB.x, bodyA.y)),
