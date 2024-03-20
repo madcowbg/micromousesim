@@ -57,9 +57,13 @@ val labyrinth: Labyrinth = Labyrinth(
             + hvline(Pt(4, 4), Pt(4, 0)) // right border
             + hvline(Pt(4, 0), Pt(0, 0)) // bottom border
 
-            + hvline(Pt(0, 1), Pt(2, 1))
+
             + listOf(
-        Wall(Pt(3, 0), Pt(3, 1))
+        *hvline(Pt(0, 1), Pt(2, 1)),
+        *hvline(Pt(3, 0), Pt(3, 2)),
+        *hvline(Pt(0, 2), Pt(1, 2)),
+        *hvline(Pt(2, 1), Pt(2, 2)),
+        *hvline(Pt(4, 3), Pt(1, 3))
     )
 )
 
