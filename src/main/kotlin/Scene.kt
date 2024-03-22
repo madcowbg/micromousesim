@@ -9,6 +9,7 @@ import imgui.ImGui
 import imgui.classes.DrawList
 import imgui.dsl
 import scene.*
+import utils.geom.Intersection
 import utils.geom.intersection
 import kotlin.math.PI
 import kotlin.math.cos
@@ -64,8 +65,7 @@ object Scene {
 }
 
 interface Drawable {
-    fun draw(drawList: DrawList, pose: Mat3)
-    //fun draw(drawList: DrawList, mapLabyrinth: (original: Vec2) -> Vec2)
+    fun draw(drawList: DrawList, drawPose: Mat3)
 }
 
 fun rotateHom2d(a: Double) = Mat3(Vec3(cos(a), sin(a), 0), Vec3(-sin(a), cos(a), 0), Vec3(0, 0, 1))
@@ -97,36 +97,43 @@ object Situation : Drawable {
 
     val mouse = Mouse(0.5f) // mouse looking to left
 
-    override fun draw(drawList: DrawList, mapLabyrinth: Mat3) {
+    override fun draw(drawList: DrawList, drawPose: Mat3) {
 
-        drawLabyrinth(labyrinth, drawList, mapLabyrinth)
+        drawLabyrinth(labyrinth, drawList, drawPose)
 
         // rotate then translate (right to left)
         val mousePose = translateHom2d(Vec2(0.5, 0.5)) * rotateHom2d(PI * MouseSettings.orient / 180.0)
 
-        drawMouse(mouse, drawList, mapLabyrinth * mousePose)
+        drawMouse(mouse, drawList, drawPose * mousePose)
 
         val laser = Laser(Vec2(0, 0), mouse.front)
 
-        val laserOrigInLab = mousePose ht laser.orig
-        val laserBeamInLab = mousePose ht laser.beam(1000)
-
         drawList.addLine(
-            mapLabyrinth ht (laserOrigInLab),
-            mapLabyrinth ht (laserBeamInLab),// (tmp.orig + (tmp.direction - tmp.orig) * 1000)),
+            drawPose ht (mousePose ht laser.orig),
+            drawPose ht (mousePose ht laser.beam(1000)),// (tmp.orig + (tmp.direction - tmp.orig) * 1000)),
             LASER_COLOR,
             thickness = 3f
         )
 
+        for (intersect in laser.intersections(mousePose)) {
+            drawList.addCircleFilled(drawPose ht intersect.point, 5f, LASER_COLOR)
+        }
+    }
+
+    private fun Laser.intersections(mouseInLabPose: Mat3): List<Intersection> {
+        val laserOrigInLab = mouseInLabPose ht orig
+        val laserBeamInLab = mouseInLabPose ht direction
+        val result = mutableListOf<Intersection>()
         for (wall in labyrinth.walls) {
             val intersect = intersection(laserOrigInLab, laserBeamInLab, wall.a.vec, wall.b.vec)
             if (intersect != null) {
                 if (intersect.t > 0 && intersect.u in 0.0..1.0) {
                     // we got an intersection!
-                    drawList.addCircleFilled(mapLabyrinth ht intersect.point, 5f, LASER_COLOR)
+                    result.add(intersect)
                 }
             }
         }
+        return result
     }
 }
 
