@@ -11,6 +11,10 @@ import kotlin.math.PI
 
 private val LASER_COLOR = ImGui.getColorU32(Vec4(arrayOf(0.7f, .1f, .7f, .4f)))
 
+class PlacedObject<O : Drawable>(val pose: Pose, val entity: O) : Drawable {
+    override fun draw(drawList: DrawList, drawPose: Pose) = entity.draw(drawList, drawPose * pose)
+}
+
 class Situation : Drawable {
     val labyrinth = Labyrinth(
         4,
@@ -30,7 +34,11 @@ class Situation : Drawable {
         )
     )
 
-    val mouse = Mouse(0.5f) // mouse looking to left
+    val mouse = PlacedObject(
+        // rotate then translate (right to left)
+        translateHom2d(Vec2(0.5, 0.5)) * rotateHom2d(PI * MouseSettings.orient / 180.0),
+        Mouse(0.5f),
+    )
 
     val size = labyrinth.size
 
@@ -38,21 +46,18 @@ class Situation : Drawable {
 
         labyrinth.draw(drawList, drawPose)
 
-        // rotate then translate (right to left)
-        val mousePose = translateHom2d(Vec2(0.5, 0.5)) * rotateHom2d(PI * MouseSettings.orient / 180.0)
+        mouse.draw(drawList, drawPose)
 
-        mouse.draw(drawList, drawPose * mousePose)
-
-        val laser = Laser(Vec2(0, 0), mouse.front)
+        val laser = Laser(Vec2(0, 0), mouse.entity.front)
 
         drawList.addLine(
-            drawPose ht (mousePose ht laser.orig),
-            drawPose ht (mousePose ht laser.beam(1000)),// (tmp.orig + (tmp.direction - tmp.orig) * 1000)),
+            drawPose ht (mouse.pose ht laser.orig),
+            drawPose ht (mouse.pose ht laser.beam(1000)),// (tmp.orig + (tmp.direction - tmp.orig) * 1000)),
             LASER_COLOR,
             thickness = 3f
         )
 
-        for (intersect in laser.intersections(mousePose)) {
+        for (intersect in laser.intersections(mouse.pose)) {
             drawList.addCircleFilled(drawPose ht intersect.point, 5f, LASER_COLOR)
         }
     }
