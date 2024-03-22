@@ -11,7 +11,7 @@ import kotlin.math.PI
 
 private val LASER_COLOR = ImGui.getColorU32(Vec4(arrayOf(0.7f, .1f, .7f, .4f)))
 
-object Situation : Drawable {
+class Situation : Drawable {
     val labyrinth = Labyrinth(
         4,
         listOf<Wall>()
@@ -31,6 +31,8 @@ object Situation : Drawable {
     )
 
     val mouse = Mouse(0.5f) // mouse looking to left
+
+    val size = labyrinth.size
 
     override fun draw(drawList: DrawList, drawPose: Mat3) {
 

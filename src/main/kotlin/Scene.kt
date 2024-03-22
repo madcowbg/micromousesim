@@ -1,17 +1,15 @@
-import scene.Situation.labyrinth
-import scene.Situation.mouse
 import utils.settings.PersistedSettings
 import glm_.vec2.Vec2
-import glm_.vec4.Vec4
 import imgui.ImGui
 import imgui.dsl
 import scene.*
 import utils.geom.*
 import kotlin.math.min
 
-
 object Scene {
     fun draw() {
+        val situation = Situation()
+
         if (UI.showMouse) {
             dsl.window("Mouse") {
                 val drawList = ImGui.windowDrawList
@@ -25,7 +23,7 @@ object Scene {
                         ImGui.windowPos + drawSize
                     )
 
-                mouse.draw(drawList, fitMouseToWindow)
+                situation.mouse.draw(drawList, fitMouseToWindow)
             }
         }
 
@@ -36,14 +34,13 @@ object Scene {
             val drawList = ImGui.windowDrawList
 
             val mapLabyrinth = mapFitRectToRect(
-                Vec2(0, labyrinth.size),
-                Vec2(labyrinth.size, 0),
+                Vec2(0, situation.size),
+                Vec2(situation.size, 0),
                 ImGui.windowPos + offset,
                 ImGui.windowPos + Vec2(drawSize, drawSize) - offset
             )
 
-            Situation.draw(drawList, mapLabyrinth)
-
+            situation.draw(drawList, mapLabyrinth)
         }
     }
 }
