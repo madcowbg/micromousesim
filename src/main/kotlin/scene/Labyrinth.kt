@@ -1,6 +1,11 @@
 package scene
 
+import glm_.mat3x3.Mat3
 import glm_.vec2.Vec2
+import glm_.vec4.Vec4
+import imgui.ImGui
+import imgui.classes.DrawList
+import utils.geom.ht
 import kotlin.math.abs
 
 class Pt(val x: Int, val y: Int) {
@@ -11,7 +16,52 @@ class Wall(val a: Pt, val b: Pt) {
     val lengthSq: Int get() = (a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y)
 }
 
-class Labyrinth(val size: Int, val walls: List<Wall>)
+
+private val MAZE_BACKGROUND_COLOR = ImGui.getColorU32(Vec4(arrayOf(0.2f, 0.5f, 0f, 1f)))
+private val MAZE_WALL_COLOR = ImGui.getColorU32(Vec4(arrayOf(1f, 1f, 1f, 1f)))
+private val MAZE_TEXT_COLOR = ImGui.getColorU32(Vec4(arrayOf(1f, 1f, 1f, 0.5f)))
+
+
+class Labyrinth(val size: Int, val walls: List<Wall>) : Drawable {
+
+    override fun draw(drawList: DrawList, drawPose: Mat3) {
+        // maze background
+        drawList.addRectFilled( // todo should be quad to support rotations!
+            drawPose ht Vec2(0, 0),
+            drawPose ht Vec2(this.size, this.size),
+            MAZE_BACKGROUND_COLOR
+        )
+
+        this.walls.forEach { wall ->
+            drawList.addLine(
+                drawPose ht (wall.a.vec),
+                drawPose ht (wall.b.vec),
+                MAZE_WALL_COLOR,
+                2.0f
+            )
+        }
+
+        for (x in 0 until this.size) {
+            for (y in 0 until this.size) {
+                drawList.addText(
+                    drawPose ht Vec2(x + 0.4, y + 0.5),
+                    MAZE_TEXT_COLOR,
+                    "cell $x,$y"
+                )
+            }
+        }
+
+        for (x in 0..this.size) {
+            for (y in 0..this.size) {
+                drawList.addText(
+                    drawPose ht Vec2(x - 0.1, y - 0.1),
+                    MAZE_TEXT_COLOR,
+                    "($x,$y)"
+                )
+            }
+        }
+    }
+}
 
 fun path(vararg pts: Pt): Array<Wall> {
     if (pts.size <= 1) return emptyArray()
