@@ -1,5 +1,6 @@
 import Situation.labyrinth
 import Situation.mouse
+import glm_.mat3x3.Mat3
 import utils.settings.PersistedSettings
 import glm_.vec2.Vec2
 import glm_.vec3.Vec3
@@ -10,6 +11,7 @@ import imgui.dsl
 import scene.*
 import utils.geom.intersection
 import utils.geom.rot
+import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.min
 import kotlin.math.sin
@@ -23,9 +25,6 @@ private val MOUSE_BODY_COLOR = ImGui.getColorU32(Vec4(arrayOf(0.1f, .2f, .8f, .9
 private val MOUSE_HEAD_COLOR = ImGui.getColorU32(Vec4(arrayOf(0.4f, .2f, .2f, .9f)))
 
 private val LASER_COLOR = ImGui.getColorU32(Vec4(arrayOf(0.7f, .1f, .7f, .4f)))
-
-
-class Position(val pos: Vec2, val orient: Vec2)
 
 object Scene {
     fun draw() {
@@ -66,10 +65,10 @@ object Scene {
 }
 
 
-fun mapRot(from: Vec2, to: Vec2): (Vec2) -> Vec2 {
-    val transf = rot(from, to)
-    return { original -> transf.times(original) }
-}
+//fun mapRot(from: Vec2, to: Vec2): (Vec2) -> Vec2 {
+//    val transf = rot(from, to)
+//    return { original -> transf.times(original) }
+//}
 
 class Pose(val homTransf: Vec3)
 
@@ -77,6 +76,14 @@ interface Drawable {
     //fun draw(drawList: DrawList, pose: Pose) TODO switch
     fun draw(drawList: DrawList, mapLabyrinth: (original: Vec2) -> Vec2)
 }
+
+fun rotateHom2d(a: Double) = Mat3(Vec3(cos(a), sin(a), 0), Vec3(-sin(a), cos(a), 0), Vec3(0, 0, 1))
+fun scaleSepHom2d(s: Vec2) = Mat3(Vec3(s.x, 0, 0), Vec3(0, s.y, 0), Vec3(0, 0, 1))
+fun scaleHom2d(s: Double) = scaleSepHom2d(Vec2(s, s))
+fun translateHom2d(v: Vec2) = Mat3(Vec3(1, 0, 0), Vec3(0, 1, 0), Vec3(v.x, v.y, 1))
+val Vec3.u: Vec2 get() = Vec2(x / z, y / z)
+val Vec2.h: Vec3 get() = Vec3(x, y, 1)
+
 
 object Situation : Drawable {
     val labyrinth = Labyrinth(
@@ -103,27 +110,30 @@ object Situation : Drawable {
 
         drawLabyrinth(labyrinth, drawList, mapLabyrinth)
 
-        val mousePos = Position(
-            Vec2(0.5, 0.5),
-            Vec2(sin(MouseSettings.orient * Math.PI / 180), cos(MouseSettings.orient * Math.PI / 180))
-        )
+        // rotate then translate (right to left)
+        val mousePose = translateHom2d(Vec2(0.5, 0.5)) * rotateHom2d(PI * MouseSettings.orient / 180.0)
 
-        val mouseRotation = mapRot(mousePos.orient, mouse.front)
-        val g = { it: Vec2 -> mapLabyrinth(mousePos.pos + mouseRotation(it)) }
+//        val mousePos = Position(
+//            Vec2(0.5, 0.5),
+//            Vec2(sin(MouseSettings.orient * Math.PI / 180), cos(MouseSettings.orient * Math.PI / 180))
+//        )
+
+//        val mouseRotation = mapRot(mousePos.orient, mouse.front)
+        val g = { it: Vec2 -> mapLabyrinth((mousePose * it.h).u) }
 
         drawMouse(mouse, drawList, g)
 
-        val laser = Laser(mousePos.pos, mouseRotation(mouse.front))
+        val laser = Laser((mousePose * Vec2(0, 0).h).u, (mousePose * Vec2(mouse.front).h).u)
 
         drawList.addLine(
             mapLabyrinth(laser.orig),
-            mapLabyrinth(laser.orig + laser.direction * 1000),
+            mapLabyrinth((laser.orig + (laser.direction - laser.orig) * 1000)),
             LASER_COLOR,
             thickness = 3f
         )
 
         for (wall in labyrinth.walls) {
-            val intersect = intersection(laser.orig, laser.orig + laser.direction, wall.a.vec, wall.b.vec)
+            val intersect = intersection(laser.orig, laser.direction, wall.a.vec, wall.b.vec)
             if (intersect != null) {
                 if (intersect.t > 0 && intersect.u in 0.0..1.0) {
                     // we got an intersection!
@@ -131,10 +141,9 @@ object Situation : Drawable {
                 }
             }
         }
-
     }
-
 }
+
 
 private fun drawMouse(mouse: Mouse, drawList: DrawList, g: (original: Vec2) -> Vec2) {
     val bodyA = Vec2(1, 1) * (-mouse.size / 2)
