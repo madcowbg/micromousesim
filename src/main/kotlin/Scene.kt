@@ -63,14 +63,6 @@ object Scene {
     }
 }
 
-
-//fun mapRot(from: Vec2, to: Vec2): (Vec2) -> Vec2 {
-//    val transf = rot(from, to)
-//    return { original -> transf.times(original) }
-//}
-
-class Pose(val homTransf: Vec3)
-
 interface Drawable {
     //fun draw(drawList: DrawList, pose: Pose) TODO switch
     fun draw(drawList: DrawList, mapLabyrinth: (original: Vec2) -> Vec2)
@@ -111,20 +103,12 @@ object Situation : Drawable {
 
         // rotate then translate (right to left)
         val mousePose = translateHom2d(Vec2(0.5, 0.5)) * rotateHom2d(PI * MouseSettings.orient / 180.0)
-
-//        val mousePos = Position(
-//            Vec2(0.5, 0.5),
-//            Vec2(sin(MouseSettings.orient * Math.PI / 180), cos(MouseSettings.orient * Math.PI / 180))
-//        )
-
-//        val mouseRotation = mapRot(mousePos.orient, mouse.front)
         val g = { it: Vec2 -> mapLabyrinth((mousePose * it.h).u) }
 
         drawMouse(mouse, drawList, g)
 
         val laser =
             Laser(Vec2(0, 0), mouse.front)// TODO (mousePose * Vec2(0, 0).h).u, (mousePose * Vec2(mouse.front).h).u)
-
 
         val laserOrigInLab = (mousePose * laser.orig.h).u
         val laserBeamInLab = (mousePose * laser.beam(1000).h).u
@@ -205,7 +189,8 @@ private fun drawLabyrinth(labyrinth: Labyrinth, drawList: DrawList, map: (origin
 }
 
 fun mapFitRectToRect(fromA: Vec2, fromB: Vec2, toA: Vec2, toB: Vec2): (original: Vec2) -> Vec2 = { original ->
-    toA + (toB - toA) * (original - fromA) / (fromB - fromA)
+    //toA + (toB - toA) * (original - fromA) / (fromB - fromA)
+    (translateHom2d(toA) * scaleSepHom2d((toB - toA) / (fromB - fromA)) * translateHom2d(-fromA) * original.h).u
 }
 
 class MazeSettings : PersistedSettings {
