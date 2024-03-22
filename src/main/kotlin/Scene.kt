@@ -64,8 +64,8 @@ object Scene {
 }
 
 interface Drawable {
-    //fun draw(drawList: DrawList, pose: Pose) TODO switch
-    fun draw(drawList: DrawList, mapLabyrinth: (original: Vec2) -> Vec2)
+    fun draw(drawList: DrawList, pose: Mat3)
+    //fun draw(drawList: DrawList, mapLabyrinth: (original: Vec2) -> Vec2)
 }
 
 fun rotateHom2d(a: Double) = Mat3(Vec3(cos(a), sin(a), 0), Vec3(-sin(a), cos(a), 0), Vec3(0, 0, 1))
@@ -97,25 +97,23 @@ object Situation : Drawable {
 
     val mouse = Mouse(0.5f) // mouse looking to left
 
-    override fun draw(drawList: DrawList, mapLabyrinth: (original: Vec2) -> Vec2) {
+    override fun draw(drawList: DrawList, mapLabyrinth: Mat3) {
 
         drawLabyrinth(labyrinth, drawList, mapLabyrinth)
 
         // rotate then translate (right to left)
         val mousePose = translateHom2d(Vec2(0.5, 0.5)) * rotateHom2d(PI * MouseSettings.orient / 180.0)
-        val g = { it: Vec2 -> mapLabyrinth((mousePose * it.h).u) }
 
-        drawMouse(mouse, drawList, g)
+        drawMouse(mouse, drawList, mapLabyrinth * mousePose)
 
-        val laser =
-            Laser(Vec2(0, 0), mouse.front)// TODO (mousePose * Vec2(0, 0).h).u, (mousePose * Vec2(mouse.front).h).u)
+        val laser = Laser(Vec2(0, 0), mouse.front)
 
-        val laserOrigInLab = (mousePose * laser.orig.h).u
-        val laserBeamInLab = (mousePose * laser.beam(1000).h).u
+        val laserOrigInLab = mousePose ht laser.orig
+        val laserBeamInLab = mousePose ht laser.beam(1000)
 
         drawList.addLine(
-            mapLabyrinth(laserOrigInLab),
-            mapLabyrinth(laserBeamInLab),// (tmp.orig + (tmp.direction - tmp.orig) * 1000)),
+            mapLabyrinth ht (laserOrigInLab),
+            mapLabyrinth ht (laserBeamInLab),// (tmp.orig + (tmp.direction - tmp.orig) * 1000)),
             LASER_COLOR,
             thickness = 3f
         )
@@ -125,43 +123,45 @@ object Situation : Drawable {
             if (intersect != null) {
                 if (intersect.t > 0 && intersect.u in 0.0..1.0) {
                     // we got an intersection!
-                    drawList.addCircleFilled(mapLabyrinth(intersect.point), 5f, LASER_COLOR)
+                    drawList.addCircleFilled(mapLabyrinth ht intersect.point, 5f, LASER_COLOR)
                 }
             }
         }
     }
 }
 
+infix fun Mat3.ht(v: Vec2) = (this * v.h).u
 
-private fun drawMouse(mouse: Mouse, drawList: DrawList, g: (original: Vec2) -> Vec2) {
+
+private fun drawMouse(mouse: Mouse, drawList: DrawList, pose: Mat3) {
     val bodyA = Vec2(1, 1) * (-mouse.size / 2)
     val bodyB = Vec2(1, 1) * (+mouse.size / 2)
 
     drawList.addQuadFilled(
-        g(bodyA), g(Vec2(bodyA.x, bodyB.y)), g(bodyB), g(Vec2(bodyB.x, bodyA.y)),
+        pose ht bodyA, pose ht (Vec2(bodyA.x, bodyB.y)), pose ht (bodyB), pose ht (Vec2(bodyB.x, bodyA.y)),
         MOUSE_BODY_COLOR
     )
 
     drawList.addLine(
-        g(Vec2(0, 0)),
-        g(mouse.front * mouse.size * 0.4),
+        pose ht (Vec2(0, 0)),
+        pose ht (mouse.front * mouse.size * 0.4),
         MOUSE_HEAD_COLOR,
         thickness = 3f
     )
 }
 
-private fun drawLabyrinth(labyrinth: Labyrinth, drawList: DrawList, map: (original: Vec2) -> Vec2) {
+private fun drawLabyrinth(labyrinth: Labyrinth, drawList: DrawList, pose: Mat3) {
     // maze background
-    drawList.addRectFilled(
-        map(Vec2(0, 0)),
-        map(Vec2(labyrinth.size, labyrinth.size)),
+    drawList.addRectFilled( // todo should be quad to support rotations!
+        pose ht Vec2(0, 0),
+        pose ht Vec2(labyrinth.size, labyrinth.size),
         MAZE_BACKGROUND_COLOR
     )
 
     labyrinth.walls.forEach { wall ->
         drawList.addLine(
-            map(wall.a.vec),
-            map(wall.b.vec),
+            pose ht (wall.a.vec),
+            pose ht (wall.b.vec),
             MAZE_WALL_COLOR,
             2.0f
         )
@@ -170,7 +170,7 @@ private fun drawLabyrinth(labyrinth: Labyrinth, drawList: DrawList, map: (origin
     for (x in 0 until labyrinth.size) {
         for (y in 0 until labyrinth.size) {
             drawList.addText(
-                map(Vec2(x + 0.4, y + 0.5)),
+                pose ht Vec2(x + 0.4, y + 0.5),
                 MAZE_TEXT_COLOR,
                 "cell $x,$y"
             )
@@ -180,7 +180,7 @@ private fun drawLabyrinth(labyrinth: Labyrinth, drawList: DrawList, map: (origin
     for (x in 0..labyrinth.size) {
         for (y in 0..labyrinth.size) {
             drawList.addText(
-                map(Vec2(x - 0.1, y - 0.1)),
+                pose ht Vec2(x - 0.1, y - 0.1),
                 MAZE_TEXT_COLOR,
                 "($x,$y)"
             )
@@ -188,10 +188,9 @@ private fun drawLabyrinth(labyrinth: Labyrinth, drawList: DrawList, map: (origin
     }
 }
 
-fun mapFitRectToRect(fromA: Vec2, fromB: Vec2, toA: Vec2, toB: Vec2): (original: Vec2) -> Vec2 = { original ->
+fun mapFitRectToRect(fromA: Vec2, fromB: Vec2, toA: Vec2, toB: Vec2): Mat3 =
     //toA + (toB - toA) * (original - fromA) / (fromB - fromA)
-    (translateHom2d(toA) * scaleSepHom2d((toB - toA) / (fromB - fromA)) * translateHom2d(-fromA) * original.h).u
-}
+    translateHom2d(toA) * scaleSepHom2d((toB - toA) / (fromB - fromA)) * translateHom2d(-fromA)
 
 class MazeSettings : PersistedSettings {
     override val settingsGroup: String = "ui.maze"
