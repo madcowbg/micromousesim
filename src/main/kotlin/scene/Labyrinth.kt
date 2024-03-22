@@ -5,7 +5,9 @@ import glm_.vec2.Vec2
 import glm_.vec4.Vec4
 import imgui.ImGui
 import imgui.classes.DrawList
+import utils.geom.Intersection
 import utils.geom.ht
+import utils.geom.intersection
 import kotlin.math.abs
 
 class Pt(val x: Int, val y: Int) {
@@ -21,8 +23,7 @@ private val MAZE_BACKGROUND_COLOR = ImGui.getColorU32(Vec4(arrayOf(0.2f, 0.5f, 0
 private val MAZE_WALL_COLOR = ImGui.getColorU32(Vec4(arrayOf(1f, 1f, 1f, 1f)))
 private val MAZE_TEXT_COLOR = ImGui.getColorU32(Vec4(arrayOf(1f, 1f, 1f, 0.5f)))
 
-
-class Labyrinth(val size: Int, val walls: List<Wall>) : Drawable {
+class Labyrinth(val size: Int, val walls: List<Wall>, val mouse: PlacedObject<Mouse>) : Drawable {
 
     override fun draw(drawList: DrawList, drawPose: Mat3) {
         // maze background
@@ -60,6 +61,28 @@ class Labyrinth(val size: Int, val walls: List<Wall>) : Drawable {
                 )
             }
         }
+
+        mouse.draw(drawList, drawPose)
+
+        for (intersect in intersections(mouse.entity.laser, mouse.pose)) {
+            drawList.addCircleFilled(drawPose ht intersect.point, 5f, LASER_COLOR)
+        }
+    }
+
+    private fun intersections(laser: Laser, mouseInLabPose: Mat3): List<Intersection> {
+        val laserOrigInLab = mouseInLabPose ht laser.orig
+        val laserBeamInLab = mouseInLabPose ht laser.direction
+        val result = mutableListOf<Intersection>()
+        for (wall in walls) {
+            val intersect = intersection(laserOrigInLab, laserBeamInLab, wall.a.vec, wall.b.vec)
+            if (intersect != null) {
+                if (intersect.t > 0 && intersect.u in 0.0..1.0) {
+                    // we got an intersection!
+                    result.add(intersect)
+                }
+            }
+        }
+        return result
     }
 }
 

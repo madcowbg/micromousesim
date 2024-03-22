@@ -23,7 +23,7 @@ object Scene {
                         ImGui.windowPos + drawSize
                     )
 
-                situation.mouse.entity.draw(drawList, fitMouseToWindow)
+                situation.labyrinth.mouse.entity.draw(drawList, fitMouseToWindow)
             }
         }
 
