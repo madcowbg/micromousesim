@@ -10,7 +10,6 @@ import imgui.classes.DrawList
 import imgui.dsl
 import scene.*
 import utils.geom.intersection
-import utils.geom.rot
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.min
@@ -123,17 +122,22 @@ object Situation : Drawable {
 
         drawMouse(mouse, drawList, g)
 
-        val laser = Laser((mousePose * Vec2(0, 0).h).u, (mousePose * Vec2(mouse.front).h).u)
+        val laser =
+            Laser(Vec2(0, 0), mouse.front)// TODO (mousePose * Vec2(0, 0).h).u, (mousePose * Vec2(mouse.front).h).u)
+
+
+        val laserOrigInLab = (mousePose * laser.orig.h).u
+        val laserBeamInLab = (mousePose * laser.beam(1000).h).u
 
         drawList.addLine(
-            mapLabyrinth(laser.orig),
-            mapLabyrinth((laser.orig + (laser.direction - laser.orig) * 1000)),
+            mapLabyrinth(laserOrigInLab),
+            mapLabyrinth(laserBeamInLab),// (tmp.orig + (tmp.direction - tmp.orig) * 1000)),
             LASER_COLOR,
             thickness = 3f
         )
 
         for (wall in labyrinth.walls) {
-            val intersect = intersection(laser.orig, laser.direction, wall.a.vec, wall.b.vec)
+            val intersect = intersection(laserOrigInLab, laserBeamInLab, wall.a.vec, wall.b.vec)
             if (intersect != null) {
                 if (intersect.t > 0 && intersect.u in 0.0..1.0) {
                     // we got an intersection!
