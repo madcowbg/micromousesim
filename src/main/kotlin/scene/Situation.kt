@@ -49,9 +49,9 @@ class Situation(parameters: Parameters) : Drawable {
         private val MOUSE_PLAN = MousePlan(
             0.5f,
             LasersPlan(
-                LaserPlan(LASER_RED_COLOR),
-                LaserPlan(LASER_GREEN_COLOR),
-                LaserPlan(LASER_BLUE_COLOR)
+                Laser(LASER_RED_COLOR),
+                Laser(LASER_GREEN_COLOR),
+                Laser(LASER_BLUE_COLOR)
             )
         )
     }

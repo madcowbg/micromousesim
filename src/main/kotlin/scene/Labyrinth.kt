@@ -81,7 +81,7 @@ class Labyrinth(
 
         intersections().forEach { (laser, intersects) ->
             intersects.forEach { intersect ->
-                drawList.addCircleFilled(drawPose ht intersect.point, 5f, laser.plan.color)
+                drawList.addCircleFilled(drawPose ht intersect.point, 5f, laser.color)
             }
         }
     }

@@ -63,14 +63,14 @@ object SceneUI {
                 val situation = Situation(changingParameters)
 
                 val lines =
-                    currentSituation.labyrinth.mouse.entity.lasers.map { it.entity.plan }// todo remove
+                    currentSituation.labyrinth.mouse.entity.lasers.map { it.entity }// todo remove
                         .associateWith { mutableListOf<Vec2>() }
                 for (orientation in -180..180) {
                     changingParameters.setMouseRot(orientation.toFloat())
 
                     distToFirst(situation)
                         .forEach { (laser, minDistance) ->
-                            lines[laser.plan]?.add(Vec2(orientation, minDistance))
+                            lines[laser]?.add(Vec2(orientation, minDistance))
                         }
                 }
 
@@ -102,14 +102,14 @@ object SceneUI {
                 val situation = Situation(changingParameters)
 
                 val lines =
-                    currentSituation.labyrinth.mouse.entity.lasers.map { it.entity.plan } // todo remove
+                    currentSituation.labyrinth.mouse.entity.lasers.map { it.entity } // todo remove
                         .associateWith { mutableListOf<Vec2>() }
                 for (positionX in 20..280) {
                     changingParameters.setMousePos(Vec2(positionX / 100f, 0.5))
 
                     distToFirst(situation)
                         .forEach { (laser, minDistance) ->
-                            lines[laser.plan]?.add(Vec2(positionX, minDistance))
+                            lines[laser]?.add(Vec2(positionX, minDistance))
                         }
                 }
 
@@ -144,7 +144,7 @@ private fun drawLines(
     drawList: DrawList,
     mapToWindow: Pose,
     current: Pair<Float, Float>,
-    lines: Map<LaserPlan, MutableList<Vec2>>
+    lines: Map<Laser, MutableList<Vec2>>
 ) {
     lines.forEach { (laser, line) ->
         drawList.addPolyline(

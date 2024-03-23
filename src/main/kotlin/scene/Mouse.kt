@@ -12,7 +12,7 @@ import kotlin.math.PI
 private val MOUSE_BODY_COLOR = ImGui.getColorU32(Vec4(arrayOf(0.1f, .2f, .8f, .9f)))
 private val MOUSE_HEAD_COLOR = ImGui.getColorU32(Vec4(arrayOf(0.4f, .2f, .2f, .9f)))
 
-class LasersPlan(val left: LaserPlan, val forward: LaserPlan, val right: LaserPlan)
+class LasersPlan(val left: Laser, val forward: Laser, val right: Laser)
 
 class MousePlan(val size: Float, val lasers: LasersPlan) {
     fun draw(drawList: DrawList, drawPose: Pose) {
@@ -47,26 +47,15 @@ val LASER_BLUE_COLOR = ImGui.getColorU32(Vec4(arrayOf(0.2f, .2f, .8f, .3f)))
 
 class Mouse(val plan: MousePlan) : Drawable {
     val lasers: List<Object<Laser>> = listOf(
-        StaticObject(translateHom2d(Vec2(0, 0.1)) * rotateHom2d(40 * PI / 180), Laser(plan.lasers.left)), // left
-        StaticObject(Mat3.identity, Laser(plan.lasers.forward)),
-        StaticObject(translateHom2d(Vec2(0, -0.1)) * rotateHom2d(-40 * PI / 180), Laser(plan.lasers.right)) // right
+        StaticObject(translateHom2d(Vec2(0, 0.1)) * rotateHom2d(40 * PI / 180), plan.lasers.left), // left
+        StaticObject(Mat3.identity, plan.lasers.forward),
+        StaticObject(translateHom2d(Vec2(0, -0.1)) * rotateHom2d(-40 * PI / 180), plan.lasers.right) // right
     )
 
     override fun draw(drawList: DrawList, drawPose: Pose) {
         plan.draw(drawList, drawPose)
 
         lasers.forEach { laser -> laser.draw(drawList, drawPose) }
-    }
-}
-
-class LaserPlan(val color: Int) {
-    fun draw(drawList: DrawList, drawPose: Pose) {
-        drawList.addLine(
-            drawPose ht Vec2(0, 0),
-            drawPose ht Vec2(1000, 0),// (tmp.orig + (tmp.direction - tmp.orig) * 1000)),
-            color,
-            thickness = 5f
-        )
     }
 }
 
@@ -89,9 +78,14 @@ class Beam(pose: Pose) {
     }
 }
 
-class Laser(val plan: LaserPlan) : Drawable {
+class Laser(val color: Int) : Drawable {
     override fun draw(drawList: DrawList, drawPose: Pose) {
-        plan.draw(drawList, drawPose)
+        drawList.addLine(
+            drawPose ht Vec2(0, 0),
+            drawPose ht Vec2(1000, 0),// (tmp.orig + (tmp.direction - tmp.orig) * 1000)),
+            color,
+            thickness = 5f
+        )
     }
 
     fun beam(parentPose: Pose): Beam = Beam(parentPose)
