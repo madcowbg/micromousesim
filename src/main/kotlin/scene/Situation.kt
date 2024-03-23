@@ -6,10 +6,18 @@ import imgui.classes.DrawList
 import utils.geom.*
 import kotlin.math.PI
 
-class Situation(mousePos: Vec2, mouseRot: Float, override val parent: Drawable? = null) : Drawable {
+interface Parameters {
+    val mousePose: Pose
+}
+
+class StaticParameters(mousePos: Vec2, mouseRot: Float) : Parameters {
+    override val mousePose: Pose = translateHom2d(mousePos) * rotateHom2d(PI * mouseRot / 180.0 + PI / 2)
+}
+
+class Situation(parameters: Parameters) : Drawable {
     val labyrinth = Labyrinth(
         4,
-        listOf<Wall>()
+        walls = listOf<Wall>()
                 + hvline(Pt(0, 0), Pt(0, 4)) // left border
                 + hvline(Pt(0, 4), Pt(4, 4))  // top border
                 + hvline(Pt(4, 4), Pt(4, 0)) // right border
@@ -22,10 +30,11 @@ class Situation(mousePos: Vec2, mouseRot: Float, override val parent: Drawable? 
             *hvline(Pt(2, 1), Pt(2, 2)),
             *hvline(Pt(4, 3), Pt(1, 3))
         ),
-        MOUSE_PLAN,
-        // rotate then translate (right to left)
-        translateHom2d(mousePos) * rotateHom2d(PI * mouseRot / 180.0 + PI / 2),
-        this
+        mouse = Mouse(
+            MOUSE_PLAN,
+            // rotate then translate (right to left)
+            parameters::mousePose
+        )
     )
 
     val size = labyrinth.size

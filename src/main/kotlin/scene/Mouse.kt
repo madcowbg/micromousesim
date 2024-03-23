@@ -7,6 +7,8 @@ import imgui.ImGui
 import imgui.classes.DrawList
 import utils.geom.*
 import kotlin.math.PI
+import kotlin.reflect.KProperty
+import kotlin.reflect.KProperty0
 
 
 private val MOUSE_BODY_COLOR = ImGui.getColorU32(Vec4(arrayOf(0.1f, .2f, .8f, .9f)))
@@ -45,19 +47,15 @@ val LASER_RED_COLOR = ImGui.getColorU32(Vec4(arrayOf(0.8f, .2f, .2f, .3f)))
 val LASER_GREEN_COLOR = ImGui.getColorU32(Vec4(arrayOf(0.2f, .8f, .2f, .3f)))
 val LASER_BLUE_COLOR = ImGui.getColorU32(Vec4(arrayOf(0.2f, .2f, .8f, .3f)))
 
-class Mouse(
-    val plan: MousePlan,
-    override val parent: Labyrinth,
-    val poseInParent: Pose,
-) : Drawable {
+class Mouse(val plan: MousePlan, val poseInParent: KProperty0<Pose>) : Drawable {
     val lasers: List<Laser> = listOf(
-        Laser(plan.lasers.left, this, translateHom2d(Vec2(0, 0.1)) * rotateHom2d(40 * PI / 180)), // left
-        Laser(plan.lasers.forward, this, Mat3.identity),
-        Laser(plan.lasers.right, this, translateHom2d(Vec2(0, -0.1)) * rotateHom2d(-40 * PI / 180)) // right
+        Laser(plan.lasers.left, translateHom2d(Vec2(0, 0.1)) * rotateHom2d(40 * PI / 180)), // left
+        Laser(plan.lasers.forward, Mat3.identity),
+        Laser(plan.lasers.right, translateHom2d(Vec2(0, -0.1)) * rotateHom2d(-40 * PI / 180)) // right
     )
 
     override fun draw(drawList: DrawList, drawPose: Pose) {
-        val pose = drawPose * poseInParent
+        val pose = drawPose * poseInParent.get()
         plan.draw(drawList, pose)
 
         lasers.forEach { laser -> laser.draw(drawList, pose) }
@@ -94,13 +92,7 @@ class Beam(pose: Pose) {
     }
 }
 
-class Laser(
-    val plan: LaserPlan,
-    override val parent: Mouse,
-    val poseInParent: Pose
-) : Drawable {
-
-
+class Laser(val plan: LaserPlan, val poseInParent: Pose) : Drawable {
     override fun draw(drawList: DrawList, drawPose: Pose) {
         val pose = drawPose * poseInParent
         plan.draw(drawList, pose)

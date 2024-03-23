@@ -12,10 +12,12 @@ import kotlin.math.sqrt
 
 object SceneUI {
     fun draw() {
-        val currentSituation = Situation(
+        val currentParameters = StaticParameters(
             mousePos = MouseSettings.mousePos,
             mouseRot = MouseSettings.orient.toFloat()
         )
+
+        val currentSituation = Situation(currentParameters)
 
         timeExec("Mouse Plan") {
             if (UI.showMouse) {
@@ -57,13 +59,13 @@ object SceneUI {
 
         timeExec("Rotation graph") {
             dsl.window("Signal Strength vs Rotation") {
+                val changingParameters = MutableParameters(MouseSettings.mousePos, 0f)
+                val situation = Situation(changingParameters)
+
                 val lines =
                     currentSituation.labyrinth.mouse.lasers.map { it.plan }.associateWith { mutableListOf<Vec2>() }
                 for (orientation in -180..180) {
-                    val situation = Situation(
-                        mousePos = MouseSettings.mousePos,
-                        mouseRot = orientation.toFloat()
-                    )
+                    changingParameters.setMouseRot(orientation.toFloat())
 
                     distToFirst(situation)
                         .forEach { (laser, minDistance) ->
@@ -95,13 +97,13 @@ object SceneUI {
 
         timeExec("Movement graph") {
             dsl.window("Signal Strength vs Movement") {
+                val changingParameters = MutableParameters(Vec2(0f), MouseSettings.orient.toFloat())
+                val situation = Situation(changingParameters)
+
                 val lines =
                     currentSituation.labyrinth.mouse.lasers.map { it.plan }.associateWith { mutableListOf<Vec2>() }
                 for (positionX in 20..280) {
-                    val situation = Situation(
-                        mousePos = Vec2(positionX / 100f, 0.5),
-                        mouseRot = MouseSettings.orient.toFloat()
-                    )
+                    changingParameters.setMousePos(Vec2(positionX / 100f, 0.5))
 
                     distToFirst(situation)
                         .forEach { (laser, minDistance) ->
@@ -154,6 +156,22 @@ private fun drawLines(
         mapToWindow ht Vec2(current.second, 10),
         ImGui.getColorU32(Vec4(arrayOf(0.4f, .4f, .4f, .6f)))
     )
+}
+
+class MutableParameters(private var internalMousePos: Vec2, private var internalMouseRot: Float) : Parameters {
+    override var mousePose: Pose = recalculate()
+
+    private fun recalculate() = StaticParameters(internalMousePos, internalMouseRot).mousePose
+
+    fun setMousePos(mousePos: Vec2) {
+        this.internalMousePos = mousePos
+        mousePose = recalculate()
+    }
+
+    fun setMouseRot(mouseRot: Float) {
+        this.internalMouseRot = mouseRot
+        mousePose = recalculate()
+    }
 }
 
 class MazeSettings : PersistedSettings {

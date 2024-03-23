@@ -26,12 +26,8 @@ private val MAZE_TEXT_COLOR = ImGui.getColorU32(Vec4(arrayOf(1f, 1f, 1f, 0.5f)))
 class Labyrinth(
     val size: Int,
     val walls: List<Wall>,
-    mousePlan: MousePlan,
-    mousePose: Pose,
-    override val parent: Situation
+    val mouse: Mouse
 ) : Drawable {
-    val mouse = Mouse(mousePlan, this, mousePose)
-
     override fun draw(drawList: DrawList, drawPose: Mat3) {
         // maze background
         drawList.addRectFilled( // todo should be quad to support rotations!
@@ -79,7 +75,7 @@ class Labyrinth(
     }
 
     fun intersections(): Map<Laser, List<Intersection>> =
-        mouse.lasers.associateWith { laser -> laser.beam(mouse.poseInParent).intersections(walls) }
+        mouse.lasers.associateWith { laser -> laser.beam(mouse.poseInParent.get()).intersections(walls) }
 }
 
 fun path(vararg pts: Pt): Array<Wall> {
