@@ -71,8 +71,10 @@ class Labyrinth(
 
         mouse.draw(drawList, drawPose)
 
-        for (intersect in mouse.laser.beam(mouse.poseInParent).intersections(walls)) {
-            drawList.addCircleFilled(drawPose ht intersect.point, 5f, LASER_COLOR)
+        for (laser in mouse.lasers) {
+            for (intersect in laser.beam(mouse.poseInParent).intersections(walls)) {
+                drawList.addCircleFilled(drawPose ht intersect.point, 5f, LASER_COLOR)
+            }
         }
     }
 

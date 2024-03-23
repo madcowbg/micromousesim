@@ -5,10 +5,7 @@ import glm_.vec2.Vec2
 import glm_.vec4.Vec4
 import imgui.ImGui
 import imgui.classes.DrawList
-import utils.geom.Intersection
-import utils.geom.ht
-import utils.geom.intersection
-import utils.geom.rotateHom2d
+import utils.geom.*
 import kotlin.math.PI
 
 
@@ -46,13 +43,17 @@ class Mouse(
     override val parent: Labyrinth,
     val poseInParent: Pose,
 ) : Drawable {
-    val laser: Laser = Laser(plan.laser, this, Mat3.identity)
+    val lasers: List<Laser> = listOf(
+        Laser(plan.laser, this, translateHom2d(Vec2(0, 0.1)) * rotateHom2d(40 * PI / 180)), // left
+        Laser(plan.laser, this, Mat3.identity),
+        Laser(plan.laser, this, translateHom2d(Vec2(0, -0.1)) * rotateHom2d(-40 * PI / 180)) // right
+    )
 
     override fun draw(drawList: DrawList, drawPose: Pose) {
         val pose = drawPose * poseInParent
         plan.draw(drawList, pose)
 
-        laser.draw(drawList, pose)
+        lasers.forEach { laser -> laser.draw(drawList, pose) }
     }
 }
 
