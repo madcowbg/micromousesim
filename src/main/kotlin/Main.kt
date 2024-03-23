@@ -143,8 +143,6 @@ fun main() {
 
         UI.loop() // UI code
 
-        Scene.draw() // custom code
-
         // Rendering
         ImGui.render()
 

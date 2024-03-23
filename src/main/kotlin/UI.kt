@@ -4,7 +4,6 @@ import utils.settings.SimpleProps
 import imgui.ImGui
 import imgui.api.slider
 import imgui.dsl
-import kotlin.math.PI
 
 val simpleProps by lazy { SimpleProps("ui.props") }
 
@@ -23,7 +22,9 @@ object UI {
     var showDemoWindow: Boolean = false
 
     fun loop() {
-        run {
+        timeExec("All") {
+            SceneUI.draw() // custom code
+
             if (showDemoWindow)
                 ImGui.showDemoWindow(::showDemoWindow)
 
@@ -49,7 +50,24 @@ object UI {
                     1_000f / ImGui.io.framerate,
                     ImGui.io.framerate
                 )
+
+                ImGui.text("Average Timing:")
+                timingsNano.entries.sortedBy { it.key }
+                    .forEach { (key, value) -> ImGui.text("  $key: ${value / 1000000f} ms") }
             }
         }
+    }
+}
+
+private val timingsNano = mutableMapOf<String, Long>()
+private const val RECENT_WT = 0.04
+fun weight(new: Long, old: Long): Long = (new * RECENT_WT + old * (1 - RECENT_WT)).toLong()
+
+fun timeExec(token: String, f: () -> Unit) {
+    val start = System.nanoTime()
+    try {
+        f()
+    } finally {
+        timingsNano[token] = weight(System.nanoTime() - start, timingsNano.getOrDefault(token, 0))
     }
 }
