@@ -12,7 +12,7 @@ import kotlin.math.sqrt
 
 object Scene {
     fun draw() {
-        val situation = Situation(
+        val currentSituation = Situation(
             mousePos = MouseSettings.mousePos,
             mouseRot = MouseSettings.orient.toFloat()
         )
@@ -29,7 +29,7 @@ object Scene {
                         ImGui.windowPos + drawSize
                     )
 
-                situation.labyrinth.mouse.plan.draw(drawList, fitMouseToWindow)
+                currentSituation.labyrinth.mouse.plan.draw(drawList, fitMouseToWindow)
             }
         }
         dsl.window("Labyrinth") {
@@ -39,57 +39,95 @@ object Scene {
             val drawList = ImGui.windowDrawList
 
             val mapLabyrinth = mapFitRectToRect(
-                Vec2(0, situation.size),
-                Vec2(situation.size, 0),
+                Vec2(0, currentSituation.size),
+                Vec2(currentSituation.size, 0),
                 ImGui.windowPos + offset,
                 ImGui.windowPos + Vec2(drawSize, drawSize) - offset
             )
 
-            situation.draw(drawList, mapLabyrinth)
+            currentSituation.draw(drawList, mapLabyrinth)
         }
 
         dsl.window("Signal Strength vs Rotation") {
-            val lines = situation.labyrinth.mouse.lasers.map { it.plan }.associateWith { mutableListOf<Vec2>() }
+            val lines = currentSituation.labyrinth.mouse.lasers.map { it.plan }.associateWith { mutableListOf<Vec2>() }
             for (orientation in -180..180) {
                 val situation = Situation(
                     mousePos = MouseSettings.mousePos,
                     mouseRot = orientation.toFloat()
                 )
 
-                val distToFirst: Map<Laser, Float> =
-                    situation.labyrinth.intersections().mapValues { (laser, intersections) ->
-                        intersections.minOfOrNull { it.t } ?: 1000f // distance to intersection
+                distToFirst(situation)
+                    .forEach { (laser, minDistance) ->
+                        lines[laser.plan]?.add(Vec2(orientation, minDistance))
                     }
-
-                distToFirst.forEach { (laser, minDistance) -> lines[laser.plan]!!.add(Vec2(orientation, minDistance)) }
             }
 
             val topLeft = ImGui.windowPos
             val bottomRight = ImGui.windowPos + ImGui.windowSize
 
-            drawLines(ImGui.windowDrawList, situation, topLeft, bottomRight, lines)
+            val mapToWindow = mapFitRectToRect(
+                Vec2(-180, sqrt(2f) * currentSituation.labyrinth.size),
+                Vec2(180, 0),
+                topLeft,
+                bottomRight
+            )
+
+            drawLines(
+                ImGui.windowDrawList,
+                mapToWindow,
+                Pair(MouseSettings.orient.toFloat() - 3, MouseSettings.orient.toFloat() + 3),
+                lines
+            )
+
+            ImGui.text(currentSituation.labyrinth.intersections().values.map { it.sortedBy { it.t }.first.t }
+                .toString())
         }
 
         dsl.window("Signal Strength vs Movement") {
-            
+            val lines = currentSituation.labyrinth.mouse.lasers.map { it.plan }.associateWith { mutableListOf<Vec2>() }
+            for (positionX in 20..280) {
+                val situation = Situation(
+                    mousePos = Vec2(positionX / 100f, 0.5),
+                    mouseRot = MouseSettings.orient.toFloat()
+                )
+
+                distToFirst(situation)
+                    .forEach { (laser, minDistance) ->
+                        lines[laser.plan]?.add(Vec2(positionX, minDistance))
+                    }
+            }
+
+            val topLeft = ImGui.windowPos
+            val bottomRight = ImGui.windowPos + ImGui.windowSize
+
+            val mapToWindow = mapFitRectToRect(
+                Vec2(20, sqrt(2f) * currentSituation.labyrinth.size),
+                Vec2(280, 0),
+                topLeft,
+                bottomRight
+            )
+
+            drawLines(
+                ImGui.windowDrawList,
+                mapToWindow,
+                Pair(MouseSettings.pos.toFloat() * 10 - 4, MouseSettings.pos.toFloat() * 10 + 4),
+                lines
+            )
         }
     }
+
+    private fun distToFirst(situation: Situation): Map<Laser, Float> =
+        situation.labyrinth.intersections().mapValues { (laser, intersections) ->
+            intersections.minOfOrNull { it.t } ?: 1000f // distance to intersection
+        }
 }
 
 private fun drawLines(
     drawList: DrawList,
-    situation: Situation,
-    topLeft: Vec2,
-    bottomRight: Vec2,
+    mapToWindow: Pose,
+    current: Pair<Float, Float>,
     lines: Map<LaserPlan, MutableList<Vec2>>
 ) {
-    val mapToWindow = mapFitRectToRect(
-        Vec2(-180, sqrt(2f) * situation.labyrinth.size),
-        Vec2(180, 0),
-        topLeft,
-        bottomRight
-    )
-
     lines.forEach { (laser, line) ->
         drawList.addPolyline(
             line.map { mapToWindow ht it },
@@ -98,12 +136,11 @@ private fun drawLines(
     }
 
     drawList.addRectFilled(
-        mapToWindow ht Vec2(MouseSettings.orient.toFloat() - 5, 0),
-        mapToWindow ht Vec2(MouseSettings.orient.toFloat() + 5, 10),
+        mapToWindow ht Vec2(current.first, 0),
+        mapToWindow ht Vec2(current.second, 10),
         ImGui.getColorU32(Vec4(arrayOf(0.4f, .4f, .4f, .6f)))
     )
 
-    ImGui.text(situation.labyrinth.intersections().values.map { it.sortedBy { it.t }.first.t }.toString())
 }
 
 
