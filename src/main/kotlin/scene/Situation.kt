@@ -33,8 +33,12 @@ class Situation(parameters: Parameters) : Drawable {
         mouse = DynamicObject(
             parameters::mousePose,
             Mouse(
-                MOUSE_PLAN,
-                // rotate then translate (right to left)
+                0.5f,
+                Sensors(
+                    Laser(LASER_RED_COLOR),
+                    Laser(LASER_GREEN_COLOR),
+                    Laser(LASER_BLUE_COLOR)
+                )
             )
         )
     )
@@ -43,16 +47,5 @@ class Situation(parameters: Parameters) : Drawable {
 
     override fun draw(drawList: DrawList, drawPose: Mat3) {
         labyrinth.draw(drawList, drawPose)
-    }
-
-    companion object {
-        private val MOUSE_PLAN = MousePlan(
-            0.5f,
-            LasersPlan(
-                Laser(LASER_RED_COLOR),
-                Laser(LASER_GREEN_COLOR),
-                Laser(LASER_BLUE_COLOR)
-            )
-        )
     }
 }

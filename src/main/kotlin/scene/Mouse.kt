@@ -8,15 +8,25 @@ import imgui.classes.DrawList
 import utils.geom.*
 import kotlin.math.PI
 
-
 private val MOUSE_BODY_COLOR = ImGui.getColorU32(Vec4(arrayOf(0.1f, .2f, .8f, .9f)))
 private val MOUSE_HEAD_COLOR = ImGui.getColorU32(Vec4(arrayOf(0.4f, .2f, .2f, .9f)))
 
-class LasersPlan(val left: Laser, val forward: Laser, val right: Laser)
+val LASER_RED_COLOR = ImGui.getColorU32(Vec4(arrayOf(0.8f, .2f, .2f, .3f)))
+val LASER_GREEN_COLOR = ImGui.getColorU32(Vec4(arrayOf(0.2f, .8f, .2f, .3f)))
+val LASER_BLUE_COLOR = ImGui.getColorU32(Vec4(arrayOf(0.2f, .2f, .8f, .3f)))
 
-class MousePlan(val size: Float, val lasers: LasersPlan) {
-    fun draw(drawList: DrawList, drawPose: Pose) {
+class Sensors(val left: Laser, val forward: Laser, val right: Laser)
 
+class Mouse(val size: Float, lasers: Sensors) : Drawable {
+    val lasers: List<Object<Laser>> = listOf(
+        StaticObject(translateHom2d(Vec2(0, 0.1)) * rotateHom2d(40 * PI / 180), lasers.left), // left
+        StaticObject(Mat3.identity, lasers.forward),
+        StaticObject(translateHom2d(Vec2(0, -0.1)) * rotateHom2d(-40 * PI / 180), lasers.right) // right
+    )
+
+    val front = Vec2(1, 0) // mouse face down
+
+    override fun draw(drawList: DrawList, drawPose: Pose) {
         val bodyA = Vec2(1, 1) * (-size / 2)
         val bodyB = Vec2(1, 1) * (+size / 2)
 
@@ -34,26 +44,6 @@ class MousePlan(val size: Float, val lasers: LasersPlan) {
             MOUSE_HEAD_COLOR,
             thickness = 3f
         )
-
-    }
-
-    val front = Vec2(1, 0) // mouse face down
-}
-
-
-val LASER_RED_COLOR = ImGui.getColorU32(Vec4(arrayOf(0.8f, .2f, .2f, .3f)))
-val LASER_GREEN_COLOR = ImGui.getColorU32(Vec4(arrayOf(0.2f, .8f, .2f, .3f)))
-val LASER_BLUE_COLOR = ImGui.getColorU32(Vec4(arrayOf(0.2f, .2f, .8f, .3f)))
-
-class Mouse(val plan: MousePlan) : Drawable {
-    val lasers: List<Object<Laser>> = listOf(
-        StaticObject(translateHom2d(Vec2(0, 0.1)) * rotateHom2d(40 * PI / 180), plan.lasers.left), // left
-        StaticObject(Mat3.identity, plan.lasers.forward),
-        StaticObject(translateHom2d(Vec2(0, -0.1)) * rotateHom2d(-40 * PI / 180), plan.lasers.right) // right
-    )
-
-    override fun draw(drawList: DrawList, drawPose: Pose) {
-        plan.draw(drawList, drawPose)
 
         lasers.forEach { laser -> laser.draw(drawList, drawPose) }
     }
