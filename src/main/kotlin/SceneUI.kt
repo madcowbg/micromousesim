@@ -19,43 +19,9 @@ object SceneUI {
 
         val currentSituation = Situation(currentParameters)
 
-        timeExec("Mouse Plan") {
-            if (UI.showMouse) {
-                dsl.window("Mouse Plan") {
-                    val drawList = ImGui.windowDrawList
-                    val drawSize = min(ImGui.windowWidth, ImGui.windowHeight)
+        drawMousePlanUI(currentSituation)
 
-                    val fitMouseToWindow =
-                        mapFitRectToRect(
-                            Vec2(1, 1) * -0.5,
-                            Vec2(1, 1) * 0.5,
-                            ImGui.windowPos,
-                            ImGui.windowPos + drawSize
-                        )
-
-                    currentSituation.labyrinth.mouse.entity.draw(drawList, fitMouseToWindow)
-                }
-            }
-        }
-
-
-        timeExec("Labyrinth draw") {
-            dsl.window("Labyrinth") {
-                val offset = 30
-                val drawSize = min(ImGui.windowWidth, ImGui.windowHeight)
-
-                val drawList = ImGui.windowDrawList
-
-                val mapLabyrinth = mapFitRectToRect(
-                    Vec2(0, currentSituation.size),
-                    Vec2(currentSituation.size, 0),
-                    ImGui.windowPos + offset,
-                    ImGui.windowPos + Vec2(drawSize, drawSize) - offset
-                )
-
-                currentSituation.draw(drawList, mapLabyrinth)
-            }
-        }
+        drawLabyrinthUI(currentSituation)
 
         timeExec("Rotation graph") {
             dsl.window("Signal Strength vs Rotation") {
@@ -63,7 +29,7 @@ object SceneUI {
                 val situation = Situation(changingParameters)
 
                 val lines =
-                    currentSituation.labyrinth.mouse.entity.lasers.map { it.entity }// todo remove
+                    situation.labyrinth.mouse.entity.lasers.map { it.entity }// todo remove
                         .associateWith { mutableListOf<Vec2>() }
                 for (orientation in -180..180) {
                     changingParameters.setMouseRot(orientation.toFloat())
@@ -78,7 +44,7 @@ object SceneUI {
                 val bottomRight = ImGui.windowPos + ImGui.windowSize
 
                 val mapToWindow = mapFitRectToRect(
-                    Vec2(-180, sqrt(2f) * currentSituation.labyrinth.size),
+                    Vec2(-180, sqrt(2f) * situation.labyrinth.size),
                     Vec2(180, 0),
                     topLeft,
                     bottomRight
@@ -102,7 +68,7 @@ object SceneUI {
                 val situation = Situation(changingParameters)
 
                 val lines =
-                    currentSituation.labyrinth.mouse.entity.lasers.map { it.entity } // todo remove
+                    situation.labyrinth.mouse.entity.lasers.map { it.entity } // todo remove
                         .associateWith { mutableListOf<Vec2>() }
                 for (positionX in 20..280) {
                     changingParameters.setMousePos(Vec2(positionX / 100f, 0.5))
@@ -117,7 +83,7 @@ object SceneUI {
                 val bottomRight = ImGui.windowPos + ImGui.windowSize
 
                 val mapToWindow = mapFitRectToRect(
-                    Vec2(20, sqrt(2f) * currentSituation.labyrinth.size),
+                    Vec2(20, sqrt(2f) * situation.labyrinth.size),
                     Vec2(280, 0),
                     topLeft,
                     bottomRight
@@ -129,6 +95,47 @@ object SceneUI {
                     Pair(MouseSettings.pos.toFloat() * 10 - 4, MouseSettings.pos.toFloat() * 10 + 4),
                     lines
                 )
+            }
+        }
+    }
+
+    private fun drawLabyrinthUI(currentSituation: Situation) {
+        timeExec("Labyrinth draw") {
+            dsl.window("Labyrinth") {
+                val offset = 30
+                val drawSize = min(ImGui.windowWidth, ImGui.windowHeight)
+
+                val drawList = ImGui.windowDrawList
+
+                val mapLabyrinth = mapFitRectToRect(
+                    Vec2(0, currentSituation.size),
+                    Vec2(currentSituation.size, 0),
+                    ImGui.windowPos + offset,
+                    ImGui.windowPos + Vec2(drawSize, drawSize) - offset
+                )
+
+                currentSituation.draw(drawList, mapLabyrinth)
+            }
+        }
+    }
+
+    private fun drawMousePlanUI(currentSituation: Situation) {
+        timeExec("Mouse Plan") {
+            if (UI.showMouse) {
+                dsl.window("Mouse Plan") {
+                    val drawList = ImGui.windowDrawList
+                    val drawSize = min(ImGui.windowWidth, ImGui.windowHeight)
+
+                    val fitMouseToWindow =
+                        mapFitRectToRect(
+                            Vec2(1, 1) * -0.5,
+                            Vec2(1, 1) * 0.5,
+                            ImGui.windowPos,
+                            ImGui.windowPos + drawSize
+                        )
+
+                    currentSituation.labyrinth.mouse.entity.draw(drawList, fitMouseToWindow)
+                }
             }
         }
     }
