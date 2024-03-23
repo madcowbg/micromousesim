@@ -12,7 +12,9 @@ import kotlin.math.PI
 private val MOUSE_BODY_COLOR = ImGui.getColorU32(Vec4(arrayOf(0.1f, .2f, .8f, .9f)))
 private val MOUSE_HEAD_COLOR = ImGui.getColorU32(Vec4(arrayOf(0.4f, .2f, .2f, .9f)))
 
-class MousePlan(val size: Float, val laser: LaserPlan) {
+class LasersPlan(val left: LaserPlan, val forward: LaserPlan, val right: LaserPlan)
+
+class MousePlan(val size: Float, val lasers: LasersPlan) {
     fun draw(drawList: DrawList, drawPose: Pose) {
 
         val bodyA = Vec2(1, 1) * (-size / 2)
@@ -38,15 +40,20 @@ class MousePlan(val size: Float, val laser: LaserPlan) {
     val front = Vec2(1, 0) // mouse face down
 }
 
+
+val LASER_RED_COLOR = ImGui.getColorU32(Vec4(arrayOf(0.8f, .2f, .2f, .3f)))
+val LASER_GREEN_COLOR = ImGui.getColorU32(Vec4(arrayOf(0.2f, .8f, .2f, .3f)))
+val LASER_BLUE_COLOR = ImGui.getColorU32(Vec4(arrayOf(0.2f, .2f, .8f, .3f)))
+
 class Mouse(
     val plan: MousePlan,
     override val parent: Labyrinth,
     val poseInParent: Pose,
 ) : Drawable {
     val lasers: List<Laser> = listOf(
-        Laser(plan.laser, this, translateHom2d(Vec2(0, 0.1)) * rotateHom2d(40 * PI / 180)), // left
-        Laser(plan.laser, this, Mat3.identity),
-        Laser(plan.laser, this, translateHom2d(Vec2(0, -0.1)) * rotateHom2d(-40 * PI / 180)) // right
+        Laser(plan.lasers.left, this, translateHom2d(Vec2(0, 0.1)) * rotateHom2d(40 * PI / 180)), // left
+        Laser(plan.lasers.forward, this, Mat3.identity),
+        Laser(plan.lasers.right, this, translateHom2d(Vec2(0, -0.1)) * rotateHom2d(-40 * PI / 180)) // right
     )
 
     override fun draw(drawList: DrawList, drawPose: Pose) {
@@ -57,15 +64,12 @@ class Mouse(
     }
 }
 
-val LASER_COLOR = ImGui.getColorU32(Vec4(arrayOf(0.7f, .1f, .7f, .3f)))
-
-
-class LaserPlan {
+class LaserPlan(val color: Int) {
     fun draw(drawList: DrawList, drawPose: Pose) {
         drawList.addLine(
             drawPose ht Vec2(0, 0),
             drawPose ht Vec2(1000, 0),// (tmp.orig + (tmp.direction - tmp.orig) * 1000)),
-            LASER_COLOR,
+            color,
             thickness = 5f
         )
     }
@@ -95,6 +99,8 @@ class Laser(
     override val parent: Mouse,
     val poseInParent: Pose
 ) : Drawable {
+
+
     override fun draw(drawList: DrawList, drawPose: Pose) {
         val pose = drawPose * poseInParent
         plan.draw(drawList, pose)

@@ -1,3 +1,4 @@
+import glm_.vec2.Vec2
 import utils.settings.PersistedSettings
 import utils.settings.SimpleProps
 import imgui.ImGui
@@ -8,9 +9,11 @@ import kotlin.math.PI
 val simpleProps by lazy { SimpleProps("ui.props") }
 
 object MouseSettings : PersistedSettings {
+
     override val settingsGroup: String = "ui.mouse"
 
     var orient: Int by simpleProps.bind({ it.toInt() }, -90)
+    val mousePos: Vec2 get() = Vec2(0.5, 0.5)
 }
 
 object UI {

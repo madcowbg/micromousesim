@@ -71,13 +71,15 @@ class Labyrinth(
 
         mouse.draw(drawList, drawPose)
 
-        for (laser in mouse.lasers) {
-            for (intersect in laser.beam(mouse.poseInParent).intersections(walls)) {
-                drawList.addCircleFilled(drawPose ht intersect.point, 5f, LASER_COLOR)
+        intersections().forEach { (laser, intersects) ->
+            intersects.forEach { intersect ->
+                drawList.addCircleFilled(drawPose ht intersect.point, 5f, laser.plan.color)
             }
         }
     }
 
+    fun intersections(): Map<Laser, List<Intersection>> =
+        mouse.lasers.associateWith { laser -> laser.beam(mouse.poseInParent).intersections(walls) }
 }
 
 fun path(vararg pts: Pt): Array<Wall> {

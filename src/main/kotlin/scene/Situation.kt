@@ -1,13 +1,12 @@
 package scene
 
-import MouseSettings
 import glm_.mat3x3.Mat3
 import glm_.vec2.Vec2
 import imgui.classes.DrawList
 import utils.geom.*
 import kotlin.math.PI
 
-class Situation(override val parent: Drawable? = null) : Drawable {
+class Situation(mousePos: Vec2, mouseRot: Float, override val parent: Drawable? = null) : Drawable {
     val labyrinth = Labyrinth(
         4,
         listOf<Wall>()
@@ -23,9 +22,9 @@ class Situation(override val parent: Drawable? = null) : Drawable {
             *hvline(Pt(2, 1), Pt(2, 2)),
             *hvline(Pt(4, 3), Pt(1, 3))
         ),
-        MousePlan(0.5f, LaserPlan()),
+        MOUSE_PLAN,
         // rotate then translate (right to left)
-        translateHom2d(Vec2(0.5, 0.5)) * rotateHom2d(PI * MouseSettings.orient / 180.0 + PI / 2),
+        translateHom2d(mousePos) * rotateHom2d(PI * mouseRot / 180.0 + PI / 2),
         this
     )
 
@@ -33,5 +32,16 @@ class Situation(override val parent: Drawable? = null) : Drawable {
 
     override fun draw(drawList: DrawList, drawPose: Mat3) {
         labyrinth.draw(drawList, drawPose)
+    }
+
+    companion object {
+        private val MOUSE_PLAN = MousePlan(
+            0.5f,
+            LasersPlan(
+                LaserPlan(LASER_RED_COLOR),
+                LaserPlan(LASER_GREEN_COLOR),
+                LaserPlan(LASER_BLUE_COLOR)
+            )
+        )
     }
 }
