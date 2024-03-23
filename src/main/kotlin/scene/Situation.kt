@@ -7,7 +7,7 @@ import imgui.classes.DrawList
 import utils.geom.*
 import kotlin.math.PI
 
-class Situation : Drawable {
+class Situation(override val parent: Drawable? = null) : Drawable {
     val labyrinth = Labyrinth(
         4,
         listOf<Wall>()
@@ -24,11 +24,10 @@ class Situation : Drawable {
             *hvline(Pt(2, 1), Pt(2, 2)),
             *hvline(Pt(4, 3), Pt(1, 3))
         ),
-        PlacedObject(
-            // rotate then translate (right to left)
-            translateHom2d(Vec2(0.5, 0.5)) * rotateHom2d(PI * MouseSettings.orient / 180.0),
-            Mouse(0.5f) { mouse -> Laser(Vec2(0, 0), mouse.front) }
-        )
+        MousePlan(0.5f, LaserPlan(Vec2(0, 0))),
+        // rotate then translate (right to left)
+        translateHom2d(Vec2(0.5, 0.5)) * rotateHom2d(PI * MouseSettings.orient / 180.0),
+        this
     )
 
     val size = labyrinth.size

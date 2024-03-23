@@ -11,7 +11,7 @@ object Scene {
         val situation = Situation()
 
         if (UI.showMouse) {
-            dsl.window("Mouse") {
+            dsl.window("Mouse Plan") {
                 val drawList = ImGui.windowDrawList
                 val drawSize = min(ImGui.windowWidth, ImGui.windowHeight)
 
@@ -23,7 +23,7 @@ object Scene {
                         ImGui.windowPos + drawSize
                     )
 
-                situation.labyrinth.mouse.entity.draw(drawList, fitMouseToWindow)
+                situation.labyrinth.mouse.plan.draw(drawList, fitMouseToWindow)
             }
         }
 

@@ -23,7 +23,14 @@ private val MAZE_BACKGROUND_COLOR = ImGui.getColorU32(Vec4(arrayOf(0.2f, 0.5f, 0
 private val MAZE_WALL_COLOR = ImGui.getColorU32(Vec4(arrayOf(1f, 1f, 1f, 1f)))
 private val MAZE_TEXT_COLOR = ImGui.getColorU32(Vec4(arrayOf(1f, 1f, 1f, 0.5f)))
 
-class Labyrinth(val size: Int, val walls: List<Wall>, val mouse: PlacedObject<Mouse>) : Drawable {
+class Labyrinth(
+    val size: Int,
+    val walls: List<Wall>,
+    mousePlan: MousePlan,
+    mousePose: Pose,
+    override val parent: Situation
+) : Drawable {
+    val mouse = Mouse(mousePlan, this, mousePose)
 
     override fun draw(drawList: DrawList, drawPose: Mat3) {
         // maze background
@@ -64,14 +71,14 @@ class Labyrinth(val size: Int, val walls: List<Wall>, val mouse: PlacedObject<Mo
 
         mouse.draw(drawList, drawPose)
 
-        for (intersect in intersections(mouse.entity.laser, mouse.pose)) {
+        for (intersect in intersections(mouse.laser, mouse.poseInParent)) {
             drawList.addCircleFilled(drawPose ht intersect.point, 5f, LASER_COLOR)
         }
     }
 
     private fun intersections(laser: Laser, mouseInLabPose: Mat3): List<Intersection> {
-        val laserOrigInLab = mouseInLabPose ht laser.orig
-        val laserBeamInLab = mouseInLabPose ht laser.direction
+        val laserOrigInLab = mouseInLabPose ht laser.plan.orig
+        val laserBeamInLab = mouseInLabPose ht laser.plan.direction
         val result = mutableListOf<Intersection>()
         for (wall in walls) {
             val intersect = intersection(laserOrigInLab, laserBeamInLab, wall.a.vec, wall.b.vec)
