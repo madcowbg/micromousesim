@@ -7,8 +7,8 @@ import imgui.ImGui
 import imgui.classes.DrawList
 import utils.geom.Intersection
 import utils.geom.ht
-import utils.geom.intersection
 import kotlin.math.abs
+import kotlin.reflect.KProperty0
 
 class Pt(val x: Int, val y: Int) {
     val vec: Vec2 get() = Vec2(x, y)
@@ -23,10 +23,22 @@ private val MAZE_BACKGROUND_COLOR = ImGui.getColorU32(Vec4(arrayOf(0.2f, 0.5f, 0
 private val MAZE_WALL_COLOR = ImGui.getColorU32(Vec4(arrayOf(1f, 1f, 1f, 1f)))
 private val MAZE_TEXT_COLOR = ImGui.getColorU32(Vec4(arrayOf(1f, 1f, 1f, 0.5f)))
 
+class DynamicObject<T : Drawable>(private val poseProperty: KProperty0<Pose>, entity: T) : Object<T>(entity) {
+    override val pose: Pose get() = poseProperty.get()
+}
+
+class StaticObject<T : Drawable>(override val pose: Pose, entity: T) : Object<T>(entity)
+
+abstract class Object<T : Drawable>(val entity: T) : Drawable {
+    abstract val pose: Pose
+
+    override fun draw(drawList: DrawList, drawPose: Pose) = entity.draw(drawList, drawPose * pose)
+}
+
 class Labyrinth(
     val size: Int,
     val walls: List<Wall>,
-    val mouse: Mouse
+    val mouse: Object<Mouse>
 ) : Drawable {
     override fun draw(drawList: DrawList, drawPose: Mat3) {
         // maze background
@@ -75,7 +87,9 @@ class Labyrinth(
     }
 
     fun intersections(): Map<Laser, List<Intersection>> =
-        mouse.lasers.associateWith { laser -> laser.beam(mouse.poseInParent.get()).intersections(walls) }
+        mouse.entity.lasers.associate { laser ->
+            laser.entity to laser.entity.beam(mouse.pose * laser.pose).intersections(walls)
+        }
 }
 
 fun path(vararg pts: Pt): Array<Wall> {

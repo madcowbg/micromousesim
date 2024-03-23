@@ -7,8 +7,6 @@ import imgui.ImGui
 import imgui.classes.DrawList
 import utils.geom.*
 import kotlin.math.PI
-import kotlin.reflect.KProperty
-import kotlin.reflect.KProperty0
 
 
 private val MOUSE_BODY_COLOR = ImGui.getColorU32(Vec4(arrayOf(0.1f, .2f, .8f, .9f)))
@@ -47,18 +45,17 @@ val LASER_RED_COLOR = ImGui.getColorU32(Vec4(arrayOf(0.8f, .2f, .2f, .3f)))
 val LASER_GREEN_COLOR = ImGui.getColorU32(Vec4(arrayOf(0.2f, .8f, .2f, .3f)))
 val LASER_BLUE_COLOR = ImGui.getColorU32(Vec4(arrayOf(0.2f, .2f, .8f, .3f)))
 
-class Mouse(val plan: MousePlan, val poseInParent: KProperty0<Pose>) : Drawable {
-    val lasers: List<Laser> = listOf(
-        Laser(plan.lasers.left, translateHom2d(Vec2(0, 0.1)) * rotateHom2d(40 * PI / 180)), // left
-        Laser(plan.lasers.forward, Mat3.identity),
-        Laser(plan.lasers.right, translateHom2d(Vec2(0, -0.1)) * rotateHom2d(-40 * PI / 180)) // right
+class Mouse(val plan: MousePlan) : Drawable {
+    val lasers: List<Object<Laser>> = listOf(
+        StaticObject(translateHom2d(Vec2(0, 0.1)) * rotateHom2d(40 * PI / 180), Laser(plan.lasers.left)), // left
+        StaticObject(Mat3.identity, Laser(plan.lasers.forward)),
+        StaticObject(translateHom2d(Vec2(0, -0.1)) * rotateHom2d(-40 * PI / 180), Laser(plan.lasers.right)) // right
     )
 
     override fun draw(drawList: DrawList, drawPose: Pose) {
-        val pose = drawPose * poseInParent.get()
-        plan.draw(drawList, pose)
+        plan.draw(drawList, drawPose)
 
-        lasers.forEach { laser -> laser.draw(drawList, pose) }
+        lasers.forEach { laser -> laser.draw(drawList, drawPose) }
     }
 }
 
@@ -92,11 +89,10 @@ class Beam(pose: Pose) {
     }
 }
 
-class Laser(val plan: LaserPlan, val poseInParent: Pose) : Drawable {
+class Laser(val plan: LaserPlan) : Drawable {
     override fun draw(drawList: DrawList, drawPose: Pose) {
-        val pose = drawPose * poseInParent
-        plan.draw(drawList, pose)
+        plan.draw(drawList, drawPose)
     }
 
-    fun beam(parentPose: Pose): Beam = Beam(parentPose * poseInParent)
+    fun beam(parentPose: Pose): Beam = Beam(parentPose)
 }

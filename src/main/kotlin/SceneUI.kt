@@ -33,7 +33,7 @@ object SceneUI {
                             ImGui.windowPos + drawSize
                         )
 
-                    currentSituation.labyrinth.mouse.plan.draw(drawList, fitMouseToWindow)
+                    currentSituation.labyrinth.mouse.entity.draw(drawList, fitMouseToWindow)
                 }
             }
         }
@@ -63,7 +63,8 @@ object SceneUI {
                 val situation = Situation(changingParameters)
 
                 val lines =
-                    currentSituation.labyrinth.mouse.lasers.map { it.plan }.associateWith { mutableListOf<Vec2>() }
+                    currentSituation.labyrinth.mouse.entity.lasers.map { it.entity.plan }// todo remove
+                        .associateWith { mutableListOf<Vec2>() }
                 for (orientation in -180..180) {
                     changingParameters.setMouseRot(orientation.toFloat())
 
@@ -101,7 +102,8 @@ object SceneUI {
                 val situation = Situation(changingParameters)
 
                 val lines =
-                    currentSituation.labyrinth.mouse.lasers.map { it.plan }.associateWith { mutableListOf<Vec2>() }
+                    currentSituation.labyrinth.mouse.entity.lasers.map { it.entity.plan } // todo remove
+                        .associateWith { mutableListOf<Vec2>() }
                 for (positionX in 20..280) {
                     changingParameters.setMousePos(Vec2(positionX / 100f, 0.5))
 

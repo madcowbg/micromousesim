@@ -30,10 +30,12 @@ class Situation(parameters: Parameters) : Drawable {
             *hvline(Pt(2, 1), Pt(2, 2)),
             *hvline(Pt(4, 3), Pt(1, 3))
         ),
-        mouse = Mouse(
-            MOUSE_PLAN,
-            // rotate then translate (right to left)
-            parameters::mousePose
+        mouse = DynamicObject(
+            parameters::mousePose,
+            Mouse(
+                MOUSE_PLAN,
+                // rotate then translate (right to left)
+            )
         )
     )
 
