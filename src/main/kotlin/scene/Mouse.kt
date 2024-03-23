@@ -19,9 +19,9 @@ class Sensors(val left: Laser, val forward: Laser, val right: Laser)
 
 class Mouse(val size: Float, lasers: Sensors) : Drawable {
     val lasers: List<Object<Laser>> = listOf(
-        StaticObject(translateHom2d(Vec2(0, 0.1)) * rotateHom2d(40 * PI / 180), lasers.left), // left
-        StaticObject(Mat3.identity, lasers.forward),
-        StaticObject(translateHom2d(Vec2(0, -0.1)) * rotateHom2d(-40 * PI / 180), lasers.right) // right
+        StaticObject(40.rotDeg then Vec2(0, 0.1).transl, lasers.left), // left
+        StaticObject(Pose.identity, lasers.forward),
+        StaticObject((-40).rotDeg then Vec2(0, -0.1).transl, lasers.right) // right
     )
 
     val front = Vec2(1, 0) // mouse face down

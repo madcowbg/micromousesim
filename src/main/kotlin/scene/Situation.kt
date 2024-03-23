@@ -11,7 +11,7 @@ interface Parameters {
 }
 
 class StaticParameters(mousePos: Vec2, mouseRot: Float) : Parameters {
-    override val mousePose: Pose = translateHom2d(mousePos) * rotateHom2d(PI * mouseRot / 180.0 + PI / 2)
+    override val mousePose: Pose = (PI / 2).rot then mouseRot.rotDeg then mousePos.transl
 }
 
 class Situation(parameters: Parameters) : Drawable {

@@ -6,6 +6,7 @@ import glm_.vec4.Vec4
 import imgui.ImGui
 import imgui.classes.DrawList
 import utils.geom.Intersection
+import utils.geom.Pose
 import utils.geom.ht
 import kotlin.math.abs
 import kotlin.reflect.KProperty0
