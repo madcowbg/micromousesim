@@ -1,16 +1,19 @@
 package scene
 
+import glm_.mat3x3.Mat3
 import glm_.vec2.Vec2
 import glm_.vec4.Vec4
 import imgui.ImGui
 import imgui.classes.DrawList
+import utils.geom.Intersection
 import utils.geom.ht
+import utils.geom.intersection
+import utils.geom.rotateHom2d
+import kotlin.math.PI
 
 
 private val MOUSE_BODY_COLOR = ImGui.getColorU32(Vec4(arrayOf(0.1f, .2f, .8f, .9f)))
 private val MOUSE_HEAD_COLOR = ImGui.getColorU32(Vec4(arrayOf(0.4f, .2f, .2f, .9f)))
-
-val FACE_DOWN_DIR = Vec2(0, 1)
 
 class MousePlan(val size: Float, val laser: LaserPlan) {
     fun draw(drawList: DrawList, drawPose: Pose) {
@@ -35,7 +38,7 @@ class MousePlan(val size: Float, val laser: LaserPlan) {
 
     }
 
-    val front = FACE_DOWN_DIR // mouse face down
+    val front = Vec2(1, 0) // mouse face down
 }
 
 class Mouse(
@@ -43,7 +46,7 @@ class Mouse(
     override val parent: Labyrinth,
     val poseInParent: Pose,
 ) : Drawable {
-    val laser: Laser = Laser(plan.laser, this)
+    val laser: Laser = Laser(plan.laser, this, Mat3.identity)
 
     override fun draw(drawList: DrawList, drawPose: Pose) {
         val pose = drawPose * poseInParent
@@ -56,23 +59,45 @@ class Mouse(
 val LASER_COLOR = ImGui.getColorU32(Vec4(arrayOf(0.7f, .1f, .7f, .3f)))
 
 
-class LaserPlan(val orig: Vec2, val direction: Vec2 = FACE_DOWN_DIR /*TODO*/) {
-    fun beam(length: Number): Vec2 = orig + (direction - orig) * 1000
+class LaserPlan {
+    fun draw(drawList: DrawList, drawPose: Pose) {
+        drawList.addLine(
+            drawPose ht Vec2(0, 0),
+            drawPose ht Vec2(1000, 0),// (tmp.orig + (tmp.direction - tmp.orig) * 1000)),
+            LASER_COLOR,
+            thickness = 5f
+        )
+    }
+}
+
+class Beam(pose: Pose) {
+    val orig: Vec2 = pose ht Vec2(0, 0)
+    val direction: Vec2 = pose ht Vec2(1, 0)
+
+    fun intersections(walls: List<Wall>): List<Intersection> {
+        val result = mutableListOf<Intersection>()
+        for (wall in walls) {
+            val intersect = intersection(this.orig, this.direction, wall.a.vec, wall.b.vec)
+            if (intersect != null) {
+                if (intersect.t > 0 && intersect.u in 0.0..1.0) {
+                    // we got an intersection!
+                    result.add(intersect)
+                }
+            }
+        }
+        return result
+    }
 }
 
 class Laser(
     val plan: LaserPlan,
     override val parent: Mouse,
+    val poseInParent: Pose
 ) : Drawable {
-
     override fun draw(drawList: DrawList, drawPose: Pose) {
-        val pose = drawPose // todo * poseInParent
-
-        drawList.addLine(
-            pose ht plan.orig,
-            pose ht plan.beam(1000),// (tmp.orig + (tmp.direction - tmp.orig) * 1000)),
-            LASER_COLOR,
-            thickness = 5f
-        )
+        val pose = drawPose * poseInParent
+        plan.draw(drawList, pose)
     }
+
+    fun beam(parentPose: Pose): Beam = Beam(parentPose * poseInParent)
 }

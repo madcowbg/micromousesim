@@ -71,26 +71,11 @@ class Labyrinth(
 
         mouse.draw(drawList, drawPose)
 
-        for (intersect in intersections(mouse.laser, mouse.poseInParent)) {
+        for (intersect in mouse.laser.beam(mouse.poseInParent).intersections(walls)) {
             drawList.addCircleFilled(drawPose ht intersect.point, 5f, LASER_COLOR)
         }
     }
 
-    private fun intersections(laser: Laser, mouseInLabPose: Mat3): List<Intersection> {
-        val laserOrigInLab = mouseInLabPose ht laser.plan.orig
-        val laserBeamInLab = mouseInLabPose ht laser.plan.direction
-        val result = mutableListOf<Intersection>()
-        for (wall in walls) {
-            val intersect = intersection(laserOrigInLab, laserBeamInLab, wall.a.vec, wall.b.vec)
-            if (intersect != null) {
-                if (intersect.t > 0 && intersect.u in 0.0..1.0) {
-                    // we got an intersection!
-                    result.add(intersect)
-                }
-            }
-        }
-        return result
-    }
 }
 
 fun path(vararg pts: Pt): Array<Wall> {
