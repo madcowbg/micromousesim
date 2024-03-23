@@ -13,7 +13,9 @@ object MouseSettings : PersistedSettings {
     override val settingsGroup: String = "ui.mouse"
 
     var orient: Int by simpleProps.bind({ it.toInt() }, -90)
-    val mousePos: Vec2 get() = Vec2(0.5, 0.5)
+    var pos: Int by simpleProps.bind({ it.toInt() }, 5)
+
+    val mousePos: Vec2 get() = Vec2(pos / 10.0, 0.5)
 }
 
 object UI {
@@ -27,10 +29,9 @@ object UI {
 
             dsl.window("Settings") {
                 dsl.checkbox("Show Mouse", ::showMouse) {}
-                if (showMouse) {
-                    slider("phi", MouseSettings::orient, 180, -180)
-                    ImGui.text("Coordinates:")
-                }
+
+                slider("phi", MouseSettings::orient, 180, -180)
+                slider("pos", MouseSettings::pos, 2, 28)
 
                 dsl.checkbox("Show Demo Window", ::showDemoWindow) {}
             }
@@ -49,8 +50,6 @@ object UI {
                     ImGui.io.framerate
                 )
             }
-
-
         }
     }
 }

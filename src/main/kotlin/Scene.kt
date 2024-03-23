@@ -2,10 +2,9 @@ import utils.settings.PersistedSettings
 import glm_.vec2.Vec2
 import glm_.vec4.Vec4
 import imgui.ImGui
+import imgui.classes.DrawList
 import imgui.dsl
 import imgui.internal.sections.DrawFlag
-import imgui.internal.sections.DrawFlags
-import imgui.none
 import scene.*
 import utils.geom.*
 import kotlin.math.min
@@ -50,7 +49,6 @@ object Scene {
         }
 
         dsl.window("Signal Strength vs Rotation") {
-
             val lines = situation.labyrinth.mouse.lasers.map { it.plan }.associateWith { mutableListOf<Vec2>() }
             for (orientation in -180..180) {
                 val situation = Situation(
@@ -66,29 +64,46 @@ object Scene {
                 distToFirst.forEach { (laser, minDistance) -> lines[laser.plan]!!.add(Vec2(orientation, minDistance)) }
             }
 
-            val mapToWindow = mapFitRectToRect(
-                Vec2(-180, sqrt(2f) * situation.labyrinth.size),
-                Vec2(180, 0),
-                ImGui.windowPos,
-                ImGui.windowPos + ImGui.windowSize
-            )
+            val topLeft = ImGui.windowPos
+            val bottomRight = ImGui.windowPos + ImGui.windowSize
 
-            lines.forEach { (laser, line) ->
-                ImGui.windowDrawList.addPolyline(
-                    line.map { mapToWindow ht it },
-                    laser.color, DrawFlag.RoundCornersNone, thickness_ = 2f
-                )
-            }
+            drawLines(ImGui.windowDrawList, situation, topLeft, bottomRight, lines)
+        }
 
-            ImGui.windowDrawList.addRectFilled(
-                mapToWindow ht Vec2(MouseSettings.orient.toFloat() - 5, 0),
-                mapToWindow ht Vec2(MouseSettings.orient.toFloat() + 5, 10),
-                ImGui.getColorU32(Vec4(arrayOf(0.4f, .4f, .4f, .6f)))
-            )
-
-            ImGui.text(situation.labyrinth.intersections().values.map { it.sortedBy { it.t }.first.t }.toString())
+        dsl.window("Signal Strength vs Movement") {
+            
         }
     }
+}
+
+private fun drawLines(
+    drawList: DrawList,
+    situation: Situation,
+    topLeft: Vec2,
+    bottomRight: Vec2,
+    lines: Map<LaserPlan, MutableList<Vec2>>
+) {
+    val mapToWindow = mapFitRectToRect(
+        Vec2(-180, sqrt(2f) * situation.labyrinth.size),
+        Vec2(180, 0),
+        topLeft,
+        bottomRight
+    )
+
+    lines.forEach { (laser, line) ->
+        drawList.addPolyline(
+            line.map { mapToWindow ht it },
+            laser.color, DrawFlag.RoundCornersNone, thickness_ = 2f
+        )
+    }
+
+    drawList.addRectFilled(
+        mapToWindow ht Vec2(MouseSettings.orient.toFloat() - 5, 0),
+        mapToWindow ht Vec2(MouseSettings.orient.toFloat() + 5, 10),
+        ImGui.getColorU32(Vec4(arrayOf(0.4f, .4f, .4f, .6f)))
+    )
+
+    ImGui.text(situation.labyrinth.intersections().values.map { it.sortedBy { it.t }.first.t }.toString())
 }
 
 
